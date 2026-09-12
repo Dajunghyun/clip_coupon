@@ -698,6 +698,38 @@
             opacity: 0.9;
         }
 
+        .login-description {
+            margin: -8px 0 2px;
+            color: #6b7280;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .login-error {
+            min-height: 18px;
+            margin: 0;
+            color: #c9184a;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .login-cancel-btn {
+            flex: 1;
+            padding: 11px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f7f9fa;
+            color: #4b5563;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn-save:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
         .modal-btn-reset {
             flex: 1;
             background-color: #f7f9fa;
@@ -921,22 +953,55 @@
         </div>
     </div>
 
+    <!-- 7. Firebase 관리자 로그인 모달 -->
+    <div class="modal-overlay" id="login-modal" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+        <div class="modal-box">
+            <div class="modal-header-row">
+                <div class="modal-title-group">
+                    <span class="title-dot" style="background-color: #c9184a;"></span>
+                    <span class="modal-title-text" id="loginModalTitle">관리자 로그인</span>
+                </div>
+                <button class="modal-close-icon" id="loginModalCloseIcon" type="button" aria-label="로그인 창 닫기">✕</button>
+            </div>
+
+            <form class="modal-form" id="loginForm">
+                <p class="login-description">Firebase Authentication에 등록한 관리자 계정으로 로그인해 주세요.</p>
+                <div class="modal-form-group">
+                    <label for="loginEmail">관리자 이메일</label>
+                    <input type="email" class="modal-input" id="loginEmail" autocomplete="username" required>
+                </div>
+                <div class="modal-form-group">
+                    <label for="loginPassword">비밀번호</label>
+                    <input type="password" class="modal-input" id="loginPassword" autocomplete="current-password" required>
+                </div>
+                <p class="login-error" id="loginError" role="alert" aria-live="polite"></p>
+                <div class="modal-btn-row">
+                    <button class="login-cancel-btn" id="loginCancelBtn" type="button">취소</button>
+                    <button class="modal-btn-save" id="loginSubmitBtn" type="submit">로그인</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- =======================================
          [Firebase SDK 및 스크립트]
     ======================================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyBDjgnb24_rrUhuafg2jvE7UoSSNR6Z-7o",
-            authDomain: "schedule-a56bb.firebaseapp.com",
-            projectId: "schedule-a56bb",
-            storageBucket: "schedule-a56bb.firebasestorage.app",
-            messagingSenderId: "791715427873",
-            appId: "1:791715427873:web:b40e0cd6f2a6c892901560"
+            apiKey: "AIzaSyDNYILtQUpoNjIJOn6PTYl_BghPS5ieBaE",
+            authDomain: "schedule-d88a9.firebaseapp.com",
+            projectId: "schedule-d88a9",
+            storageBucket: "schedule-d88a9.firebasestorage.app",
+            messagingSenderId: "320552804089",
+            appId: "1:320552804089:web:a18df2a437d721fa998c28",
+            measurementId: "G-5ZX6M3S5GS"
         };
+
+        const ADMIN_UID = "olEnOZ3AWkWnhwDC2z7rizPupWv1";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -1006,6 +1071,14 @@
         const editGoodsName = document.getElementById('editGoodsName');
         const editGoodsDesc = document.getElementById('editGoodsDesc');
         const btnSaveGoods = document.getElementById('btnSaveGoods');
+        const loginModal = document.getElementById('login-modal');
+        const loginForm = document.getElementById('loginForm');
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginError = document.getElementById('loginError');
+        const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+        const loginCancelBtn = document.getElementById('loginCancelBtn');
+        const loginModalCloseIcon = document.getElementById('loginModalCloseIcon');
 
         function isStampComplete(stamp) {
             if (!stamp) return false;
@@ -1398,18 +1471,54 @@
 
         async function handleAuthToggle() {
             if (state.currentUser) {
-                await signOut(auth);
-            } else {
-                const email = prompt("관리자 이메일을 입력하세요:");
-                if (!email) return;
-                const password = prompt("비밀번호를 입력하세요:");
-                if (!password) return;
-
                 try {
-                    await signInWithEmailAndPassword(auth, email.trim(), password);
+                    await signOut(auth);
                 } catch (error) {
-                    alert("로그인 실패: 이메일 또는 비밀번호가 올바르지 않습니다.");
+                    console.error("로그아웃 실패:", error);
+                    alert("로그아웃하지 못했습니다. 잠시 후 다시 시도해주세요.");
                 }
+            } else {
+                openLoginModal();
+            }
+        }
+
+        function openLoginModal() {
+            loginForm.reset();
+            loginError.textContent = "";
+            loginModal.style.display = "flex";
+            requestAnimationFrame(() => loginEmail.focus());
+        }
+
+        function closeLoginModal() {
+            loginModal.style.display = "none";
+            loginForm.reset();
+            loginError.textContent = "";
+        }
+
+        async function handleLoginSubmit(event) {
+            event.preventDefault();
+            const email = loginEmail.value.trim();
+            const password = loginPassword.value;
+            if (!email || !password) return;
+
+            loginSubmitBtn.disabled = true;
+            loginError.textContent = "로그인 정보를 확인하고 있습니다…";
+
+            try {
+                await setPersistence(auth, browserSessionPersistence);
+                const credential = await signInWithEmailAndPassword(auth, email, password);
+                if (credential.user.uid !== ADMIN_UID) {
+                    await signOut(auth);
+                    throw new Error("not-admin");
+                }
+                closeLoginModal();
+            } catch (error) {
+                console.error("로그인 실패:", error?.code || error?.message || error);
+                loginPassword.value = "";
+                loginError.textContent = "관리자 이메일 또는 비밀번호를 확인해주세요.";
+                loginPassword.focus();
+            } finally {
+                loginSubmitBtn.disabled = false;
             }
         }
 
@@ -1422,11 +1531,17 @@
         function init() {
             renderGoods();
 
-            onAuthStateChanged(auth, user => {
-                state.currentUser = user;
-                authBtn.textContent = user ? "로그아웃" : "관리자 로그인";
-                authBtn.classList.toggle('logged-in', !!user);
-                adminControlsBar.classList.toggle('active', !!user);
+            onAuthStateChanged(auth, async user => {
+                const isAdmin = !!user && user.uid === ADMIN_UID;
+                if (user && !isAdmin) {
+                    await signOut(auth);
+                    return;
+                }
+
+                state.currentUser = isAdmin ? user : null;
+                authBtn.textContent = isAdmin ? "로그아웃" : "관리자 로그인";
+                authBtn.classList.toggle('logged-in', isAdmin);
+                adminControlsBar.classList.toggle('active', isAdmin);
                 renderGoods();
                 renderBoards();
             });
@@ -1468,6 +1583,12 @@
             });
 
             authBtn.addEventListener('click', handleAuthToggle);
+            loginForm.addEventListener('submit', handleLoginSubmit);
+            loginCancelBtn.addEventListener('click', closeLoginModal);
+            loginModalCloseIcon.addEventListener('click', closeLoginModal);
+            loginModal.addEventListener('click', (event) => {
+                if (event.target === loginModal) closeLoginModal();
+            });
             btnAddBoard.addEventListener('click', handleAddBoard);
             btnSaveStamp.addEventListener('click', saveStampData);
             btnResetStamp.addEventListener('click', resetStampData);
@@ -1492,6 +1613,7 @@
                 if (e.key === 'Escape') {
                     closeModal();
                     closeGoodsEditModal();
+                    closeLoginModal();
                 }
             });
         }
