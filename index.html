@@ -226,6 +226,10 @@
     .weekday { padding:12px; background:var(--surface); }
     .calendar-grid { border-radius:0 0 14px 14px; }
     .day-cell:hover,.day-cell.outside { background:var(--hover); }
+    /* 방송 상태나 선택 여부에 따라 날짜 칸의 배경색을 변경하지 않습니다. */
+    .day-cell:not(.outside),
+    .day-cell:not(.outside):hover,
+    .day-cell:not(.outside).selected { background:var(--surface) !important; }
     .icon-btn,.soft-btn,.tab-btn,.modal-card { background:var(--surface); }
     .field input,.field select,.schedule-row input,.schedule-row select { background:var(--input); color:var(--text); }
     .tab-btn.active { color:var(--text); }
