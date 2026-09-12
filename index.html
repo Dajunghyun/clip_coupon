@@ -1433,9 +1433,6 @@
 
             onSnapshot(collection(db, "hotclips_goods"), snapshot => {
                 if (snapshot.empty) {
-                    state.goods = defaultGoodsLis... (3KB 남음)
-                  onSnapshot(collection(db, "hotclips_goods"), snapshot => {
-                if (snapshot.empty) {
                     state.goods = defaultGoodsList;
                     if (state.currentUser) {
                         defaultGoodsList.forEach(g => setDoc(doc(db, "hotclips_goods", String(g.id)), g));
