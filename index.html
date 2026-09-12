@@ -1,858 +1,1624 @@
 <!DOCTYPE html>
-<html lang="ko" data-build="off-background-removed-v2">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>다정현 방송 스케줄</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
-  <style>
-    :root {
-      --bg: #f7f8fb;
-      --surface: #ffffff;
-      --text: #24262b;
-      --muted: #8b909a;
-      --line: #e6e8ec;
-      --pink: #e46f94;
-      --pink-soft: #fce8ef;
-      --blue: #4c83d4;
-      --blue-soft: #e4edf8;
-      --off: #8a766a;
-      --off-soft: #eee7e1;
-      --shadow: 0 16px 44px rgba(44, 52, 68, .07);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다정현 핫클립 저장소</title>
+    
+    <style>
+        /* [전체 기본 레이아웃] */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #fff0f3;
+            color: #4a4a4a;
+            margin: 0;
+            padding: 20px 20px 100px;
+            box-sizing: border-box;
+            overflow-y: scroll;
+        }
 
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    button, input, select { font: inherit; }
-    button { color: inherit; }
-    [hidden] { display: none !important; }
+        /* [최상단 관리자 로그인 바] */
+        .top-auth-container {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto 12px;
+            display: flex;
+            justify-content: flex-end;
+            box-sizing: border-box;
+        }
 
-    .app-shell {
-      width: min(1420px, calc(100% - 40px));
-      margin: 24px auto;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
+        .auth-btn {
+            padding: 7px 15px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid #ffccd5;
+            background-color: #ffffff;
+            color: #c9184a;
+            box-shadow: 0 2px 6px rgba(255, 117, 143, 0.1);
+            transition: all 0.2s;
+        }
 
-    .app-header {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      min-height: 96px;
-      padding: 20px 30px;
-      border-bottom: 1px solid var(--line);
-    }
-    .brand { min-width: 190px; }
-    .brand h1 { margin: 0; font-size: 25px; letter-spacing: -.5px; }
+        .auth-btn.logged-in {
+            background-color: #c9184a;
+            color: #ffffff;
+            border-color: #c9184a;
+        }
 
-    .month-nav { display: flex; align-items: center; gap: 10px; }
-    .icon-btn, .soft-btn, .tab-btn {
-      border: 1px solid var(--line);
-      background: #fff;
-      border-radius: 999px;
-      cursor: pointer;
-      transition: .18s ease;
-    }
-    .icon-btn { width: 38px; height: 38px; font-size: 20px; }
-    .soft-btn, .tab-btn { padding: 9px 16px; font-size: 13px; font-weight: 700; }
-    .icon-btn:hover, .soft-btn:hover, .tab-btn:hover { border-color: #cfd3da; background: #fafbfc; }
-    .month-label { min-width: 108px; text-align: center; line-height: 1; }
-    .month-label strong { font-size: 30px; letter-spacing: -1px; }
-    .month-label span { margin-left: 7px; color: var(--muted); font-size: 13px; }
+        .auth-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
 
-    .header-right { margin-left: auto; display: flex; align-items: center; gap: 9px; }
-    .tab-btn.active { background: var(--pink-soft); border-color: transparent; color: #b74f72; }
-    .auth-btn.logged-in { background: #333843; border-color: #333843; color: #fff; }
+        /* [공통 카드 컨테이너] */
+        .container, .board-card, .goods-card {
+            background: #ffffff;
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto 24px;
+            padding: 35px 40px;
+            border-radius: 20px;
+            border: 1px solid #ffccd5;
+            box-shadow: 0 8px 20px rgba(255, 117, 143, 0.12);
+            box-sizing: border-box;
+            position: relative;
+        }
 
-    .calendar-wrap { padding: 24px 30px 32px; }
-    .weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
-    .weekdays { color: #5d626b; font-size: 12px; font-weight: 800; }
-    .weekday { padding: 0 12px 12px; }
-    .weekday:first-child { color: #d65362; }
-    .weekday:last-child { color: var(--blue); }
+        .container {
+            text-align: center;
+        }
 
-    .calendar-grid {
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      overflow: hidden;
-      background: var(--line);
-      gap: 1px;
-    }
-    .day-cell {
-      min-width: 0;
-      min-height: 142px;
-      padding: 10px 8px;
-      background: #fff;
-      border: 0;
-      text-align: left;
-      cursor: pointer;
-      overflow: hidden;
-    }
-    .day-cell:hover { background: #fcfcfd; }
-    .day-cell.outside { background: #fcfcfb; color: #c6c9ce; }
-    .day-cell.outside .event-chip { opacity: .46; }
-    .day-number {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 25px;
-      height: 25px;
-      margin-bottom: 8px;
-      border-radius: 50%;
-      font-size: 14px;
-      font-weight: 700;
-    }
-    .day-cell.sunday:not(.outside) .day-number { color: #d65362; }
-    .day-cell.saturday:not(.outside) .day-number { color: var(--blue); }
-    .day-cell.today .day-number { background: var(--blue); color: #fff !important; }
-    .day-cell.selected { box-shadow: inset 0 0 0 2px #343a46; }
-    .event-list { display: flex; flex-direction: column; gap: 4px; }
-    .event-chip {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 5px;
-      align-items: center;
-      min-width: 0;
-      padding: 4px 7px;
-      border-radius: 7px;
-      background: var(--blue-soft);
-      color: #405a77;
-      font-size: 12px;
-      line-height: 1.15;
-    }
-    .event-chip.off { background: var(--off-soft); color: var(--off); }
-    .event-time { font-weight: 800; white-space: nowrap; }
-    .event-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; }
+        /* [상단 배너 이미지] */
+        .profile-img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto 20px;
+            border-radius: 16px;
+            border: 4px solid #ff758f;
+        }
 
-    .weekly-wrap { padding: 30px; }
-    .weekly-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 18px; }
-    .weekly-head h2 { margin: 0; font-size: 20px; }
-    .weekly-head p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
-    .weekly-admin { display: none; gap: 8px; flex-wrap: wrap; }
-    body.is-admin .weekly-admin { display: flex; }
-    .weekly-stage {
-      display: grid;
-      place-items: center;
-      min-height: 540px;
-      padding: 20px;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: #f8f8fa;
-      overflow: hidden;
-    }
-    .weekly-image { display: block; max-width: 100%; max-height: 78vh; object-fit: contain; border-radius: 8px; }
-    .weekly-empty { text-align: center; color: var(--muted); line-height: 1.7; font-size: 14px; }
-    .upload-status { min-height: 20px; margin-top: 10px; color: var(--muted); font-size: 12px; text-align: right; }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: #c9184a;
+        }
 
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: grid;
-      place-items: center;
-      padding: 20px;
-      background: rgba(24, 27, 34, .48);
-      backdrop-filter: blur(3px);
-    }
-    .modal-card {
-      width: min(520px, 100%);
-      max-height: calc(100vh - 40px);
-      overflow-y: auto;
-      padding: 24px;
-      border-radius: 18px;
-      background: #fff;
-      box-shadow: 0 24px 70px rgba(0,0,0,.18);
-    }
-    .modal-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-    .modal-title-row h2 { margin: 0; font-size: 19px; }
-    .close-btn { border: 0; background: #f0f1f3; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; }
-    .form-stack { display: flex; flex-direction: column; gap: 13px; }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field label, .row-label { color: #666c76; font-size: 12px; font-weight: 750; }
-    .field input, .field select, .schedule-row input, .schedule-row select {
-      width: 100%;
-      min-width: 0;
-      padding: 10px 11px;
-      border: 1px solid #dfe2e7;
-      border-radius: 8px;
-      outline: none;
-      background: #fff;
-    }
-    .field input:focus, .schedule-row input:focus, .schedule-row select:focus { border-color: var(--pink); }
-    .status-options { display: flex; gap: 8px; }
-    .status-options label { flex: 1; }
-    .status-options input { position: absolute; opacity: 0; pointer-events: none; }
-    .status-options span { display: block; padding: 9px; border: 1px solid var(--line); border-radius: 8px; text-align: center; font-size: 12px; cursor: pointer; }
-    .status-options input:checked + span { border-color: var(--pink); background: var(--pink-soft); color: #b74f72; font-weight: 800; }
-    .schedule-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
-    .danger-btn { color: #c74354; }
-    .primary-btn { background: #333843; border-color: #333843; color: #fff; }
-    .error-text { min-height: 18px; margin: 0; color: #c74354; font-size: 12px; }
-    .detail-status { display: inline-block; margin-bottom: 12px; padding: 5px 9px; border-radius: 7px; background: var(--blue-soft); color: #405a77; font-size: 12px; font-weight: 800; }
-    .detail-status.off { background: var(--off-soft); color: var(--off); }
-    .detail-items { display: flex; flex-direction: column; gap: 8px; }
-    .detail-item { display: grid; grid-template-columns: 66px 1fr; gap: 10px; padding: 11px; border-radius: 10px; background: #f7f8fa; font-size: 14px; }
-    .detail-item time { color: var(--pink); font-weight: 800; }
+        /* =======================================
+           [굿즈 안내 박스 스타일]
+        ======================================= */
+        .goods-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
 
-    @media (max-width: 820px) {
-      .app-shell { width: 100%; margin: 0; border: 0; border-radius: 0; min-height: 100vh; }
-      .app-header { align-items: flex-start; flex-wrap: wrap; padding: 18px 16px; }
-      .brand { width: 100%; min-width: 0; }
-      .month-nav { order: 3; width: 100%; }
-      .header-right { position: absolute; top: 17px; right: 16px; }
-      .header-right .soft-btn.auth-btn { padding: 8px 11px; }
-      .calendar-wrap { padding: 16px 8px 24px; overflow-x: auto; }
-      .weekdays, .calendar-grid { min-width: 760px; }
-      .day-cell { min-height: 112px; }
-      .weekly-wrap { padding: 20px 12px; }
-      .weekly-head { align-items: flex-start; flex-direction: column; }
-      .weekly-stage { min-height: 360px; padding: 8px; }
-    }
+        .goods-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #c9184a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-    :root { --hover:#fcfcfd; --input:#ffffff; }
-    .day-cell { display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; background:var(--surface); }
-    .day-number { flex-shrink:0; align-self:flex-start; }
-    .weekdays { font-size:15px; font-weight:800; border:1px solid var(--line); border-bottom:0; border-radius:14px 14px 0 0; overflow:hidden; gap:1px; background:var(--line); }
-    .weekday { padding:12px; background:var(--surface); }
-    .calendar-grid { border-radius:0 0 14px 14px; }
-    .day-cell:hover,.day-cell.outside { background:var(--hover); }
-    /* 방송 상태나 선택 여부에 따라 날짜 칸의 배경색을 변경하지 않습니다. */
-    .day-cell:not(.outside),
-    .day-cell:not(.outside):hover,
-    .day-cell:not(.outside).selected { background:var(--surface) !important; }
-    .icon-btn,.soft-btn,.tab-btn,.modal-card { background:var(--surface); }
-    .field input,.field select,.schedule-row input,.schedule-row select { background:var(--input); color:var(--text); }
-    .tab-btn.active { color:var(--text); }
-    .weekdays { color:var(--muted); }
-    .icon-btn:hover,.soft-btn:hover,.tab-btn:hover { background:var(--hover); border-color:var(--muted); }
-    .primary-btn,.auth-btn.logged-in { background:var(--text); color:var(--surface); }
-    .event-chip { font-size:12px; grid-template-columns:auto 1fr; min-height:23px; }
-    .event-chip.long { border-radius:3px; border-left:3px solid currentColor; }
-    .theme-select { max-width:110px; border:1px solid var(--line); border-radius:20px; padding:8px; color:var(--text); background:var(--surface); font-size:13px; }
-    .weekly-layout { display:grid; grid-template-columns:250px minmax(0,1fr); gap:24px; }
-    .mini-calendar { align-self:start; border:1px solid var(--line); border-radius:14px; padding:12px; }
-    .mini-nav,.week-nav { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
-    .mini-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
-    .mini-grid span { text-align:center; padding:7px 0; font-size:12px; color:var(--muted); }
-    .mini-grid button { border:0; border-radius:6px; padding:9px 0; background:transparent; color:var(--text); cursor:pointer; }
-    .mini-grid button.in-week { background:var(--pink-soft); }
-    .mini-grid button.chosen { outline:2px solid var(--pink); outline-offset:-2px; }
-    .mini-grid button.outside { opacity:.4; }
-    .weekly-stage { background:var(--hover); min-height:320px; }
-    .week-nav strong { font-size:15px; text-align:center; }
-    #scheduleRows { display:grid; gap:12px; }
-    .palette-editor { border:1px solid var(--line); border-radius:10px; padding:10px; font-size:12px; }
-    .palette-editor summary { cursor:pointer; font-weight:700; }
-    .palette-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; }
-    .palette-controls input[type="color"] { width:40px; height:36px; padding:3px; border:1px solid var(--line); border-radius:6px; }
-    .palette-controls input[type="text"] { width:112px; padding:8px; border:1px solid var(--line); border-radius:6px; background:var(--input); color:var(--text); }
-    .saved-colors { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
-    .saved-color { display:flex; align-items:center; gap:5px; }
-    .saved-color i { width:20px; height:20px; border:1px solid #888; border-radius:4px; }
-    .saved-color button { border:1px solid var(--line); background:var(--surface); border-radius:6px; cursor:pointer; }
-    .schedule-row { border:1px solid var(--line); border-radius:10px; padding:10px; grid-template-columns:90px minmax(0,1fr) 40px; }
-    .schedule-row .color-input { padding:3px; height:42px; }
-    .row-dates { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12px; }
-    .row-dates select { width:110px; }
-    .row-dates input { width:150px; }
-    .row-dates button { margin-left:auto; }
-    .hint { font-size:12px; color:var(--muted); line-height:1.6; margin:0; }
-    #continuedItems { display:grid; gap:6px; }
-    .detail-item { font-size:12px; background:var(--hover); }
-    .detail-item time { color:inherit; }
-    @media(max-width:820px) { .header-right {position:static; margin-left:0; flex-wrap:wrap;} .weekly-layout {grid-template-columns:1fr;} .mini-calendar {max-width:340px; width:100%;} .brand {width:auto;} }
-    .app-header { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); }
-    .brand { grid-column:1; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-    .brand h1 { white-space:nowrap; }
-    .month-nav { grid-column:2; }
-    .header-right { grid-column:3; justify-self:end; }
-    .view-switcher { display:flex; align-items:center; gap:9px; padding:0; flex-shrink:0; }
-    @media(max-width:1150px) {
-      .app-header { display:flex; flex-wrap:wrap; }
-      .brand { flex:1 1 auto; }
-      .header-right { position:static; margin-left:auto; flex-wrap:wrap; }
-      .month-nav { order:3; width:100%; justify-content:center; }
-    }
-  </style>
+        .goods-badge-pink {
+            font-size: 12px;
+            font-weight: bold;
+            color: #c9184a;
+            background-color: #fff0f3;
+            border: 1px solid #ffccd5;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .goods-description {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.7;
+            margin: 0 0 20px 0;
+        }
+
+        .goods-description b {
+            color: #c9184a;
+        }
+
+        .goods-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .goods-item {
+            background: #ffffff;
+            border: 1px solid #ffe5ec;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+            transition: transform 0.15s ease-in-out, box-shadow 0.15s;
+            position: relative;
+        }
+
+        .goods-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 14px rgba(255, 117, 143, 0.15);
+            border-color: #ffccd5;
+        }
+
+        .is-admin .goods-item {
+            cursor: pointer;
+        }
+        .is-admin .goods-item:hover::after {
+            content: "✏️ 클릭하여 수정";
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(201, 24, 74, 0.9);
+            color: #ffffff;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .goods-img-wrapper {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-color: #fffafb;
+            border: 1px solid #fff0f3;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .goods-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .goods-badge-no {
+            align-self: flex-start;
+            font-size: 11px;
+            font-weight: bold;
+            color: #c9184a;
+            background-color: #ffe5ec;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-bottom: 6px;
+        }
+
+        .goods-badge-no.special {
+            color: #6f4518;
+            background-color: #ede0d4;
+            border: 1px solid #b08968;
+        }
+
+        .goods-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #111827;
+            margin: 0 0 4px 0;
+            line-height: 1.3;
+        }
+
+        .goods-info {
+            font-size: 11px;
+            color: #6b7280;
+            line-height: 1.4;
+            margin: 0;
+            word-break: keep-all;
+        }
+
+        .goods-footer-msg {
+            text-align: center;
+            font-size: 13px;
+            color: #888888;
+            padding-top: 16px;
+            border-top: 1px dashed #ffccd5;
+            margin: 0;
+        }
+
+        /* =======================================
+           [검색 및 정렬 바 - 상단 Sticky]
+        ======================================= */
+        .search-sort-bar-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #fff0f3;
+            width: 100%;
+            padding: 16px 0;
+            margin-bottom: 8px;
+        }
+
+        .search-sort-bar {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            box-sizing: border-box;
+        }
+
+        .search-box-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            font-size: 16px;
+            color: #ff758f;
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 42px;
+            border-radius: 12px;
+            border: 1.5px solid #ffccd5;
+            background-color: #ffffff;
+            font-size: 14px;
+            color: #4a4a4a;
+            outline: none;
+            box-shadow: 0 4px 10px rgba(255, 117, 143, 0.08);
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: #ff758f;
+            box-shadow: 0 4px 12px rgba(255, 117, 143, 0.2);
+        }
+
+        .sort-btn-group {
+            display: flex;
+            gap: 6px;
+            background: #ffffff;
+            padding: 4px;
+            border-radius: 12px;
+            border: 1.5px solid #ffccd5;
+            box-shadow: 0 4px 10px rgba(255, 117, 143, 0.08);
+            flex-shrink: 0;
+        }
+
+        .sort-btn {
+            border: none;
+            background: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #888888;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .sort-btn:hover {
+            color: #c9184a;
+            background-color: #fff0f3;
+        }
+
+        .sort-btn.active {
+            background-color: #ff758f;
+            color: #ffffff;
+        }
+
+        /* 관리자 도장판 추가 툴바 */
+        .admin-controls-bar {
+            max-width: 1100px;
+            width: 100%;
+            margin: -6px auto 18px;
+            display: none;
+            justify-content: flex-end;
+        }
+
+        .admin-controls-bar.active {
+            display: flex;
+        }
+
+        .btn-add-board {
+            background-color: #c9184a;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 18px;
+            font-size: 13.5px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(201, 24, 74, 0.2);
+            transition: all 0.2s;
+        }
+
+        .btn-add-board:hover {
+            background-color: #a01036;
+        }
+
+        #boards-container {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            min-height: 70vh;
+        }
+
+        .no-result-msg {
+            background: #ffffff;
+            width: 100%;
+            padding: 40px 20px;
+            border-radius: 20px;
+            border: 1px dashed #ffccd5;
+            text-align: center;
+            color: #888888;
+            font-size: 15px;
+            box-sizing: border-box;
+            display: none;
+        }
+
+        /* =======================================
+           [도장판 영역 스타일]
+        ======================================= */
+        .board-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #fff0f3;
+        }
+
+        .board-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .board-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #c9184a;
+            margin: 0;
+        }
+
+        .board-admin-btns {
+            display: none;
+            gap: 6px;
+        }
+
+        .is-admin .board-admin-btns {
+            display: flex;
+        }
+
+        .btn-board-edit, .btn-board-delete {
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid #ffccd5;
+            background: #fff0f3;
+            color: #c9184a;
+            transition: all 0.15s;
+        }
+
+        .btn-board-edit:hover {
+            background-color: #ffd6df;
+        }
+
+        .btn-board-delete {
+            color: #e53e3e;
+            border-color: #fed7d7;
+            background: #fff5f5;
+        }
+
+        .btn-board-delete:hover {
+            background-color: #fed7d7;
+        }
+
+        .board-badge {
+            font-size: 13px;
+            font-weight: bold;
+            color: #ff4d6d;
+            background-color: #fff0f3;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .stamp-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 8px;
+        }
+
+        .stamp-btn {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            background-color: #fffbfc;
+            border: 1.5px solid #ffe3ea;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            transition: all 0.15s ease-in-out;
+            overflow: hidden;
+        }
+
+        .stamp-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 117, 143, 0.15);
+            border-color: #ffccd5;
+        }
+
+        .stamp-btn.special {
+            background-color: #faf7f5;
+            border: 1.5px solid #ede0d4;
+        }
+
+        .stamp-btn.special:hover {
+            border-color: #d6c1af;
+            box-shadow: 0 4px 8px rgba(111, 69, 24, 0.1);
+        }
+
+        .stamp-icon {
+            width: 70%;
+            height: 70%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .stamp-btn.active {
+            background-color: #ffe5ec;
+            border: 2px solid #ff8fa3;
+        }
+
+        .stamp-btn.active.special {
+            background-color: #ede0d4;
+            border: 2px solid #b08968;
+        }
+
+        .stamp-number {
+            position: absolute;
+            bottom: 3px;
+            right: 5px;
+            font-size: 10px;
+            color: #c9a9b0;
+            font-weight: 600;
+        }
+
+        .stamp-btn.special .stamp-number {
+            color: #bfaea2;
+        }
+
+        .stamp-btn.active .stamp-number {
+            color: #c9184a;
+        }
+
+        .stamp-btn.active.special .stamp-number {
+            color: #6f4518;
+        }
+
+        /* =======================================
+           [공통 모달 팝업]
+        ======================================= */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(2px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            max-width: 420px;
+            width: 100%;
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            box-sizing: border-box;
+            position: relative;
+            text-align: left;
+        }
+
+        .modal-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .title-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: background-color 0.2s;
+        }
+
+        .modal-title-text {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .modal-close-icon {
+            width: 28px;
+            height: 28px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: #6b7280;
+            font-size: 14px;
+            line-height: 1;
+            padding: 0;
+            transition: background 0.15s;
+        }
+
+        .modal-close-icon:hover {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .modal-view-mode {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 15px;
+            color: #374151;
+        }
+
+        .modal-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            word-break: break-all;
+        }
+
+        .modal-item-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .modal-item-link {
+            color: #c9184a;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .modal-item-link:hover {
+            text-decoration: underline;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .modal-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .modal-form-group label {
+            font-size: 12px;
+            font-weight: bold;
+            color: #6b7280;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #ffccd5;
+            border-radius: 8px;
+            font-size: 13.5px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .modal-input:focus {
+            border-color: #ff758f;
+        }
+
+        /* 굿즈 이미지 실시간 미리보기 박스 */
+        .modal-preview-wrapper {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 6px;
+            border-radius: 10px;
+            border: 1px solid #ffe5ec;
+            background: #fffafb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .modal-preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .modal-btn-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .modal-btn-save {
+            flex: 2;
+            background-color: #c9184a;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 11px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .modal-btn-save:hover {
+            opacity: 0.9;
+        }
+
+        .login-description {
+            margin: -8px 0 2px;
+            color: #6b7280;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .login-error {
+            min-height: 18px;
+            margin: 0;
+            color: #c9184a;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .login-cancel-btn {
+            flex: 1;
+            padding: 11px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f7f9fa;
+            color: #4b5563;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn-save:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .modal-btn-reset {
+            flex: 1;
+            background-color: #f7f9fa;
+            color: #e53e3e;
+            border: 1px solid #fed7d7;
+            border-radius: 8px;
+            padding: 11px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .modal-btn-reset:hover {
+            background-color: #fff5f5;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px 12px 60px;
+            }
+
+            .top-auth-container {
+                margin-bottom: 10px;
+            }
+
+            .auth-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .container, .board-card, .goods-card {
+                padding: 22px 16px;
+                border-radius: 16px;
+                margin-bottom: 16px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .search-sort-bar-wrapper {
+                padding: 10px 0;
+                margin-bottom: 12px;
+            }
+
+            .search-sort-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .sort-btn-group {
+                width: 100%;
+                justify-content: space-between;
+                box-sizing: border-box;
+            }
+
+            .sort-btn {
+                flex: 1;
+                padding: 8px 6px;
+                text-align: center;
+            }
+
+            .goods-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .stamp-grid {
+                grid-template-columns: repeat(6, 1fr);
+                gap: 6px;
+            }
+
+            .stamp-number {
+                font-size: 8px;
+                bottom: 2px;
+                right: 3px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <main class="app-shell">
-    <header class="app-header">
-      <div class="brand">
-        <h1>다정현 월간 일정표</h1>
-        <nav class="view-switcher" aria-label="스케줄 보기 선택">
-          <button class="tab-btn active" id="monthlyTab" type="button">월간</button>
-          <button class="tab-btn" id="weeklyTab" type="button">주간</button>
-        </nav>
-      </div>
 
-      <div class="month-nav" id="monthNav">
-        <button class="icon-btn" id="prevMonthBtn" type="button" aria-label="이전 달">‹</button>
-        <div class="month-label"><strong id="monthText"></strong><span id="yearText"></span></div>
-        <button class="icon-btn" id="nextMonthBtn" type="button" aria-label="다음 달">›</button>
-        <button class="soft-btn" id="todayBtn" type="button">오늘</button>
-      </div>
-
-      <div class="header-right">
-        <select class="theme-select" id="themeSelect" aria-label="색상 테마"><option value="white">하얀색</option><option value="pink">분홍색</option><option value="blue">파란색</option><option value="yellow">노란색</option><option value="chocolate">초콜릿색</option><option value="gray">회색</option><option value="dark">다크모드</option></select>
-        <button class="soft-btn auth-btn" id="authBtn" type="button">관리자 로그인</button>
-      </div>
-    </header>
-
-    <section class="calendar-wrap" id="monthlyView">
-      <div class="weekdays" aria-hidden="true">
-        <div class="weekday">일</div><div class="weekday">월</div><div class="weekday">화</div>
-        <div class="weekday">수</div><div class="weekday">목</div><div class="weekday">금</div><div class="weekday">토</div>
-      </div>
-      <div class="calendar-grid" id="calendarGrid" aria-label="월간 방송 일정"></div>
-    </section>
-
-    <section class="weekly-wrap" id="weeklyView" hidden>
-      <div class="weekly-head">
-        <div>
-          <h2>주간 스케줄</h2>
-          <p>매주 업로드된 스케줄 이미지를 확인할 수 있어요.</p>
-        </div>
-        <div class="weekly-admin">
-          <input id="weeklyImageInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
-          <button class="soft-btn" id="uploadImageBtn" type="button">이미지 업로드·교체</button>
-          <button class="soft-btn danger-btn" id="deleteImageBtn" type="button">이미지 삭제</button>
-        </div>
-      </div>
-      <div class="weekly-layout"><aside class="mini-calendar" aria-label="주간 날짜 선택"><div class="mini-nav"><button type="button" class="icon-btn" id="miniPrev" aria-label="미니 캘린더 이전 달">‹</button><strong id="miniLabel"></strong><button type="button" class="icon-btn" id="miniNext" aria-label="미니 캘린더 다음 달">›</button></div><div class="mini-grid" id="miniGrid"></div></aside><div><div class="week-nav"><button class="icon-btn" id="prevWeek" aria-label="이전 주">‹</button><strong id="weekLabel"></strong><button class="icon-btn" id="nextWeek" aria-label="다음 주">›</button><button class="soft-btn" id="thisWeek">이번 주</button></div><div class="weekly-stage">
-        <img class="weekly-image" id="weeklyImage" alt="다정현 주간 방송 스케줄" hidden>
-        <div class="weekly-empty" id="weeklyEmpty">아직 등록된 주간 스케줄 이미지가 없습니다.</div>
-      </div>
-      <div class="upload-status" id="uploadStatus" aria-live="polite"></div></div></div>
-    </section>
-  </main>
-
-  <div class="modal-backdrop" id="loginModal" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-      <div class="modal-title-row"><h2 id="loginTitle">관리자 로그인</h2><button class="close-btn" data-close="loginModal" type="button">✕</button></div>
-      <form class="form-stack" id="loginForm">
-        <div class="field"><label for="loginEmail">Firebase 관리자 이메일</label><input id="loginEmail" type="email" autocomplete="username" required></div>
-        <div class="field"><label for="loginPassword">비밀번호</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
-        <p class="error-text" id="loginError" aria-live="polite"></p>
-        <div class="modal-actions"><button class="soft-btn" data-close="loginModal" type="button">취소</button><button class="soft-btn primary-btn" id="loginSubmitBtn" type="submit">로그인</button></div>
-      </form>
+    <!-- 최상단 관리자 로그인/로그아웃 바 -->
+    <div class="top-auth-container">
+        <button class="auth-btn" id="authBtn">관리자 로그인</button>
     </div>
-  </div>
 
-  <div class="modal-backdrop" id="editModal" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="editTitle">
-      <div class="modal-title-row"><h2 id="editTitle">일정 편집</h2><button class="close-btn" data-close="editModal" type="button">✕</button></div>
-      <form class="form-stack" id="editForm">
-        <div>
-          <div class="row-label" style="margin-bottom:7px">방송 상태</div>
-          <div class="status-options">
-            <label><input type="radio" name="status" value="none"><span>미정</span></label>
-            <label><input type="radio" name="status" value="on"><span>방송 ON</span></label>
-            <label><input type="radio" name="status" value="off"><span>방송 OFF</span></label>
-          </div>
+    <!-- 1. 상단 배너 메인 보드 -->
+    <div class="container">
+        <img src="my-image.png" alt="프로필 사진" class="profile-img">
+        <h1>다정현 핫클립 저장소</h1>
+        <p style="margin: 0; color: #666; font-size: 15px;">원하는 도장을 클릭하여 상세 클립 정보를 확인하세요.</p>
+    </div>
+
+    <!-- 2. 핫클립 굿즈 안내 박스 -->
+    <div class="goods-card" id="goodsCardContainer">
+        <div class="goods-header">
+            <h2 class="goods-title">🎁 핫클립 굿즈 안내</h2>
+            <span class="goods-badge-pink">도장 3개마다 보상</span>
         </div>
-        <div class="row-label">일정 내용</div>
-        <details class="palette-editor">
-          <summary>+ 내 색상 추가·관리</summary>
-          <div class="palette-controls">
-            <input id="customColorPicker" type="color" value="#ececec" aria-label="추가할 색상 선택">
-            <input id="customColorHex" type="text" value="#ececec" maxlength="7" placeholder="#ececec" aria-label="추가할 색상 코드" spellcheck="false">
-            <button class="soft-btn" id="addCustomColor" type="button">색상표에 추가</button>
-          </div>
-          <div class="saved-colors" id="savedColors"></div>
-          <p class="hint">추가한 색은 각 일정의 색상표에 표시되며, 이 브라우저에 저장됩니다.</p>
-          <p class="hint" id="paletteMessage" aria-live="polite"></p>
-        </details>
-        <p class="hint">여러 날 일정은 선택한 날짜부터 종료일까지 표시됩니다. 이어지는 일정은 시작일에서 한 번에 수정할 수 있어요.</p><div id="continuedItems"></div><div id="scheduleRows"></div><button class="soft-btn" id="addScheduleRow" type="button">+ 일정 추가</button>
-        <p class="error-text" id="editError" aria-live="polite"></p>
-        <div class="modal-actions"><button class="soft-btn danger-btn" id="resetScheduleBtn" type="button">일정 삭제</button><button class="soft-btn" data-close="editModal" type="button">취소</button><button class="soft-btn primary-btn" id="saveScheduleBtn" type="submit">저장</button></div>
-      </form>
+
+        <div class="goods-description">
+            쿠폰에 <b>도장 3개마다</b> 찍혀 있는 분에 한하여 지급하는 전용 굿즈입니다.<br>
+            굿즈 배송은 제작 후 팬심을 통해 보내는 과정이 있어 <b>일정 시간이 소요</b>됩니다.<br>
+            자세한 내용은 공지사항을 참고해주세요.
+        </div>
+
+        <div class="goods-grid" id="goods-grid-container"></div>
+
+        <p class="goods-footer-msg">항상 클립 따주셔서 정말 감사합니다 💖 작게나마 보답이 되었으면 좋겠습니다!</p>
     </div>
-  </div>
 
-  <div class="modal-backdrop" id="detailModal" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
-      <div class="modal-title-row"><h2 id="detailTitle">일정</h2><button class="close-btn" data-close="detailModal" type="button">✕</button></div>
-      <div id="detailBody"></div>
-      <div class="modal-actions"><button class="soft-btn primary-btn" data-close="detailModal" type="button">닫기</button></div>
+    <!-- 3. 닉네임 검색 및 정렬 바 -->
+    <div class="search-sort-bar-wrapper">
+        <div class="search-sort-bar">
+            <div class="search-box-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="nickname-search" class="search-input" placeholder="닉네임 검색">
+            </div>
+            <div class="sort-btn-group">
+                <button class="sort-btn active" id="sort-name">가나다순</button>
+                <button class="sort-btn" id="sort-stamps">도장순</button>
+                <button class="sort-btn" id="sort-latest">최신순</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <!-- 관리자 도장판 추가 툴바 -->
+    <div class="admin-controls-bar" id="adminControlsBar">
+        <button class="btn-add-board" id="btnAddBoard">+ 도장판 새로 만들기</button>
+    </div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDNYILtQUpoNjIJOn6PTYl_BghPS5ieBaE",
-      authDomain: "schedule-d88a9.firebaseapp.com",
-      projectId: "schedule-d88a9",
-      storageBucket: "schedule-d88a9.firebasestorage.app",
-      messagingSenderId: "320552804089",
-      appId: "1:320552804089:web:a18df2a437d721fa998c28",
-      measurementId: "G-5ZX6M3S5GS"
-    };
-    const ADMIN_UID = "olEnOZ3AWkWnhwDC2z7rizPupWv1";
+    <!-- 4. 도장판 목록 영역 -->
+    <div id="boards-container">
+        <div class="no-result-msg" id="no-result-msg"></div>
+    </div>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    <!-- 5. 도장 상세 정보 / 편집 모달 -->
+    <div class="modal-overlay" id="info-modal">
+        <div class="modal-box">
+            <div class="modal-header-row">
+                <div class="modal-title-group">
+                    <span class="title-dot" id="modal-dot"></span>
+                    <span class="modal-title-text" id="modal-title">1번 도장</span>
+                </div>
+                <button class="modal-close-icon" id="modalCloseIcon">✕</button>
+            </div>
 
-    const state = {
-      view: 'monthly',
-      year: new Date().getFullYear(),
-      month: new Date().getMonth(),
-      selectedKey: null,
-      currentUser: null,
-      schedules: {}
-    };
+            <!-- 열람 뷰 -->
+            <div class="modal-view-mode" id="modalViewMode">
+                <div class="modal-item">
+                    <span class="modal-item-icon">🗓️</span>
+                    <span id="modal-date">2026. 8. 31.</span>
+                </div>
+                <div class="modal-item">
+                    <span class="modal-item-icon">💭</span>
+                    <span id="modal-text">클립 정보가 없습니다.</span>
+                </div>
+                <div class="modal-item">
+                    <span class="modal-item-icon">🎬</span>
+                    <a href="#" id="modal-link" target="_blank" class="modal-item-link">링크 바로가기</a>
+                </div>
+            </div>
 
-    const $ = id => document.getElementById(id);
-    const calendarGrid = $('calendarGrid');
-    const monthText = $('monthText');
-    const yearText = $('yearText');
-    const monthNav = $('monthNav');
-    const monthlyView = $('monthlyView');
-    const weeklyView = $('weeklyView');
-    const monthlyTab = $('monthlyTab');
-    const weeklyTab = $('weeklyTab');
-    const authBtn = $('authBtn');
-    const weeklyImage = $('weeklyImage');
-    const weeklyEmpty = $('weeklyEmpty');
-    const uploadStatus = $('uploadStatus');
+            <!-- 관리자 편집 폼 -->
+            <div class="modal-form" id="modalEditMode" style="display: none;">
+                <div class="modal-form-group">
+                    <label>현재 날짜 (예: 2026. 8. 31.)</label>
+                    <input type="text" class="modal-input" id="editStampDate" placeholder="2026. 8. 31.">
+                </div>
+                <div class="modal-form-group">
+                    <label>클립 내용 (예: 26.08 [반캠] 업보청산)</label>
+                    <input type="text" class="modal-input" id="editStampText" placeholder="26.08 [반캠] 업보청산">
+                </div>
+                <div class="modal-form-group">
+                    <label>영상 링크 URL</label>
+                    <input type="text" class="modal-input" id="editStampUrl" placeholder="https://chzzk.naver.com/clips/...">
+                </div>
+                
+                <div class="modal-btn-row">
+                    <button class="modal-btn-save" id="btnSaveStamp">도장 저장</button>
+                    <button class="modal-btn-reset" id="btnResetStamp">초기화</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    const pad = value => String(value).padStart(2, '0');
-    const dateKey = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-    const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+    <!-- 6. 관리자 굿즈 수정 모달 -->
+    <div class="modal-overlay" id="goods-edit-modal">
+        <div class="modal-box">
+            <div class="modal-header-row">
+                <div class="modal-title-group">
+                    <span class="title-dot" style="background-color: #c9184a;"></span>
+                    <span class="modal-title-text" id="goodsModalTitle">굿즈 정보 수정</span>
+                </div>
+                <button class="modal-close-icon" id="goodsModalCloseIcon">✕</button>
+            </div>
 
-    function emptySchedule() {
-      return { status: 'none', items: [{time:'',text:''},{time:'',text:''},{time:'',text:''}] };
-    }
+            <div class="modal-form">
+                <!-- 이미지 미리보기 -->
+                <div class="modal-preview-wrapper">
+                    <img src="" alt="미리보기" class="modal-preview-img" id="goodsPreviewImg">
+                </div>
 
-    function setView(view) {
-      state.view = view;
-      const monthly = view === 'monthly';
-      monthlyView.hidden = !monthly;
-      weeklyView.hidden = monthly;
-      monthNav.hidden = !monthly;
-      monthlyTab.classList.toggle('active', monthly);
-      weeklyTab.classList.toggle('active', !monthly);
-      if (!monthly) renderWeek();
-    }
+                <div class="modal-form-group">
+                    <label>이미지 파일명 또는 웹 URL (예: gift1.png 또는 외부 링크)</label>
+                    <input type="text" class="modal-input" id="editGoodsImg" placeholder="gift1.png 또는 https://...">
+                </div>
 
-    function renderCalendar() {
-      monthText.textContent = `${state.month + 1}월`;
-      yearText.textContent = state.year;
-      calendarGrid.innerHTML = '';
+                <div class="modal-form-group">
+                    <label>굿즈 이름</label>
+                    <input type="text" class="modal-input" id="editGoodsName" placeholder="다정현 손편지">
+                </div>
+                <div class="modal-form-group">
+                    <label>상세 설명 문구</label>
+                    <input type="text" class="modal-input" id="editGoodsDesc" placeholder="보상사용 할까말까 고민되는군요">
+                </div>
+                <button class="modal-btn-save" id="btnSaveGoods">굿즈 정보 저장</button>
+            </div>
+        </div>
+    </div>
 
-      const first = new Date(state.year, state.month, 1);
-      const gridStart = new Date(state.year, state.month, 1 - first.getDay());
-      const todayKey = dateKey(new Date());
+    <!-- 7. Firebase 관리자 로그인 모달 -->
+    <div class="modal-overlay" id="login-modal" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+        <div class="modal-box">
+            <div class="modal-header-row">
+                <div class="modal-title-group">
+                    <span class="title-dot" style="background-color: #c9184a;"></span>
+                    <span class="modal-title-text" id="loginModalTitle">관리자 로그인</span>
+                </div>
+                <button class="modal-close-icon" id="loginModalCloseIcon" type="button" aria-label="로그인 창 닫기">✕</button>
+            </div>
 
-      for (let index = 0; index < 42; index++) {
-        const date = new Date(gridStart);
-        date.setDate(gridStart.getDate() + index);
-        const key = dateKey(date);
-        const data = state.schedules[key] || emptySchedule();
-        const cell = document.createElement('button');
-        cell.type = 'button';
-        cell.className = 'day-cell';
-        if (date.getMonth() !== state.month) cell.classList.add('outside');
-        if (date.getDay() === 0) cell.classList.add('sunday');
-        if (date.getDay() === 6) cell.classList.add('saturday');
-        if (key === todayKey) cell.classList.add('today');
-        if (key === state.selectedKey) cell.classList.add('selected');
-        cell.dataset.date = key;
+            <form class="modal-form" id="loginForm">
+                <p class="login-description">Firebase Authentication에 등록한 관리자 계정으로 로그인해 주세요.</p>
+                <div class="modal-form-group">
+                    <label for="loginEmail">관리자 이메일</label>
+                    <input type="email" class="modal-input" id="loginEmail" autocomplete="username" required>
+                </div>
+                <div class="modal-form-group">
+                    <label for="loginPassword">비밀번호</label>
+                    <input type="password" class="modal-input" id="loginPassword" autocomplete="current-password" required>
+                </div>
+                <p class="login-error" id="loginError" role="alert" aria-live="polite"></p>
+                <div class="modal-btn-row">
+                    <button class="login-cancel-btn" id="loginCancelBtn" type="button">취소</button>
+                    <button class="modal-btn-save" id="loginSubmitBtn" type="submit">로그인</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-        const number = document.createElement('span');
-        number.className = 'day-number';
-        number.textContent = date.getDate();
-        cell.appendChild(number);
+    <!-- =======================================
+         [Firebase SDK 및 스크립트]
+    ======================================= -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const list = document.createElement('div');
-        list.className = 'event-list';
-        const validItems = itemsForDate(key);
-        if (data.status === 'off' && validItems.length === 0) validItems.push({time:'', text:'휴방'});
-        validItems.forEach(item => {
-          const chip = document.createElement('div');
-          chip.className = `event-chip${data.status === 'off' ? ' off' : ''}${item.endDate > item.startDate ? ' long' : ''}`;
-          paintChip(chip, item.color);
-          chip.title = `${item.category || item.time || ''} ${item.text || ''}${item.endDate > item.startDate ? ' (' + item.startDate + ' ~ ' + item.endDate + ')' : ''}`;
-          if (item.category || item.time) {
-            const time = document.createElement('span');
-            time.className = 'event-time';
-            time.textContent = item.category || item.time;
-            chip.appendChild(time);
-          }
-          const text = document.createElement('span');
-          text.className = 'event-text';
-          text.textContent = item.text || (data.status === 'off' ? '휴방' : '방송');
-          chip.appendChild(text);
-          list.appendChild(chip);
-        });
-        cell.appendChild(list);
-        cell.addEventListener('click', () => handleDayClick(key));
-        calendarGrid.appendChild(cell);
-      }
-    }
+        const firebaseConfig = {
+            apiKey: "AIzaSyDNYILtQUpoNjIJOn6PTYl_BghPS5ieBaE",
+            authDomain: "schedule-d88a9.firebaseapp.com",
+            projectId: "schedule-d88a9",
+            storageBucket: "schedule-d88a9.firebasestorage.app",
+            messagingSenderId: "320552804089",
+            appId: "1:320552804089:web:a18df2a437d721fa998c28",
+            measurementId: "G-5ZX6M3S5GS"
+        };
 
-    function handleDayClick(key) {
-      state.selectedKey = key;
-      renderCalendar();
-      if (state.currentUser) openEditModal(key);
-      else openDetailModal(key);
-    }
+        const ADMIN_UID = "olEnOZ3AWkWnhwDC2z7rizPupWv1";
 
-    function displayDate(key) {
-      const [year, month, day] = key.split('-').map(Number);
-      const weekday = ['일','월','화','수','목','금','토'][new Date(year, month - 1, day).getDay()];
-      return `${year}년 ${month}월 ${day}일 (${weekday})`;
-    }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-    function openDetailModal(key) {
-      const data = state.schedules[key] || emptySchedule();
-      const items = itemsForDate(key);
-      $('detailTitle').textContent = displayDate(key);
-      let html = `<span class="detail-status${data.status === 'off' ? ' off' : ''}">${data.status === 'on' ? '방송 ON' : data.status === 'off' ? '방송 OFF' : '미정'}</span>`;
-      if (!items.length) html += `<p style="color:var(--muted);font-size:14px">등록된 일정이 없습니다.</p>`;
-      else {
-        html += '<div class="detail-items">' + items.map(item => `<div class="detail-item"><time>${escapeHtml(item.category || item.time || '일정')}</time><span>${escapeHtml(item.text)}${item.endDate > item.startDate ? `<br><small>${escapeHtml(item.startDate)} ~ ${escapeHtml(item.endDate)}</small>` : ''}</span></div>`).join('') + '</div>';
-      }
-      $('detailBody').innerHTML = html;
-      $('detailModal').hidden = false;
-    }
+        const STAMPS_PER_BOARD = 30;
 
-    function openEditModal(key) {
-      const data = state.schedules[key] || emptySchedule();
-      $('editTitle').textContent = `${displayDate(key)} 편집`;
-      const status = ['none','on','off'].includes(data.status) ? data.status : 'none';
-      document.querySelector(`input[name="status"][value="${status}"]`).checked = true;
-      $('scheduleRows').innerHTML = '';
-      (data.items?.length ? data.items : [{}]).forEach(item => addRow(item));
-      $('continuedItems').innerHTML = '';
-      itemsForDate(key).filter(item => item.startDate !== key).forEach(item => {
-        const button = document.createElement('button'); button.type='button'; button.className='soft-btn';
-        button.textContent = item.text + ' · ' + item.startDate + ' 시작 일정 수정';
-        button.onclick=()=>{state.selectedKey=item.startDate;openEditModal(item.startDate);}; $('continuedItems').append(button);
-      });
-      $('editError').textContent = '';
-      $('editModal').hidden = false;
-    }
+        const defaultGoodsList = [
+            { id: 1, name: "다정현 손편지", desc: "a", img: "gift1.png", isSpecial: false },
+            { id: 2, name: "다정현 맥세이프 그립톡", desc: "b", img: "gift2.png", isSpecial: false },
+            { id: 3, name: "다정현 키링", desc: "c", img: "gift3.png", isSpecial: false },
+            { id: 4, name: "다정현 아크릴 스탠드", desc: "d", img: "gift4.png", isSpecial: false },
+            { id: 5, name: "다정현 캔뱃지", desc: "e", img: "gift5.png", isSpecial: false },
+            { id: 6, name: "다정현 머그컵", desc: "f", img: "gift6.png", isSpecial: false },
+            { id: 7, name: "다정현 향수", desc: "g", img: "gift7.png", isSpecial: false },
+            { id: 8, name: "다정현 장패드", desc: "h", img: "gift8.png", isSpecial: true }
+        ];
 
-    async function saveSchedule(event) {
-      event.preventDefault();
-      if (!state.currentUser || !state.selectedKey) return;
-      const button = $('saveScheduleBtn');
-      button.disabled = true;
-      $('editError').textContent = '저장하고 있습니다…';
-      const status = document.querySelector('input[name="status"]:checked')?.value || 'none';
-      const items = [...document.querySelectorAll('.schedule-row')].map(row => ({
-        category: row.querySelector('.category-input').value,
-        time: row.dataset.legacyTime || '',
-        color: row.querySelector('.color-input').value,
-        endDate: row.querySelector('.duration-input').value === 'multi' ? row.querySelector('.end-input').value : state.selectedKey,
-        text: row.querySelector('.text-input').value.trim()
-      }));
-      if (items.some(item => item.text && (!item.endDate || item.endDate < state.selectedKey))) { $('editError').textContent='종료일은 시작일과 같거나 이후여야 합니다.'; button.disabled=false; return; }
-      try {
-        if (status === 'none' && !items.some(item => item.time || item.text)) {
-          await deleteDoc(doc(db, 'schedules', state.selectedKey));
-        } else {
-          await setDoc(doc(db, 'schedules', state.selectedKey), { status, items: items.filter(item => item.text || item.time) });
+        const defaultBoards = {
+            1: { name: "다정현", count: 0 },
+            2: { name: "조선우", count: 0 },
+            3: { name: "우초이", count: 0 }
+        };
+
+        const state = {
+            currentUser: null,
+            goods: defaultGoodsList,
+            boards: {},
+            stamps: {},
+            currentSortMode: 'name',
+            searchQuery: '',
+            activeEditingStamp: null,
+            activeEditingGoods: null
+        };
+
+        const authBtn = document.getElementById('authBtn');
+        const adminControlsBar = document.getElementById('adminControlsBar');
+        const btnAddBoard = document.getElementById('btnAddBoard');
+        const nicknameSearch = document.getElementById('nickname-search');
+        const sortButtons = {
+            name: document.getElementById('sort-name'),
+            stamps: document.getElementById('sort-stamps'),
+            latest: document.getElementById('sort-latest')
+        };
+        const goodsCardContainer = document.getElementById('goodsCardContainer');
+
+        const infoModal = document.getElementById('info-modal');
+        const modalCloseIcon = document.getElementById('modalCloseIcon');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDot = document.getElementById('modal-dot');
+        const modalViewMode = document.getElementById('modalViewMode');
+        const modalDate = document.getElementById('modal-date');
+        const modalText = document.getElementById('modal-text');
+        const modalLink = document.getElementById('modal-link');
+        const modalEditMode = document.getElementById('modalEditMode');
+        const editStampDate = document.getElementById('editStampDate');
+        const editStampText = document.getElementById('editStampText');
+        const editStampUrl = document.getElementById('editStampUrl');
+        const btnSaveStamp = document.getElementById('btnSaveStamp');
+        const btnResetStamp = document.getElementById('btnResetStamp');
+
+        const goodsEditModal = document.getElementById('goods-edit-modal');
+        const goodsModalCloseIcon = document.getElementById('goodsModalCloseIcon');
+        const goodsModalTitle = document.getElementById('goodsModalTitle');
+        const goodsPreviewImg = document.getElementById('goodsPreviewImg');
+        const editGoodsImg = document.getElementById('editGoodsImg');
+        const editGoodsName = document.getElementById('editGoodsName');
+        const editGoodsDesc = document.getElementById('editGoodsDesc');
+        const btnSaveGoods = document.getElementById('btnSaveGoods');
+        const loginModal = document.getElementById('login-modal');
+        const loginForm = document.getElementById('loginForm');
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginError = document.getElementById('loginError');
+        const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+        const loginCancelBtn = document.getElementById('loginCancelBtn');
+        const loginModalCloseIcon = document.getElementById('loginModalCloseIcon');
+
+        function isStampComplete(stamp) {
+            if (!stamp) return false;
+            const hasDate = stamp.date && !stamp.date.includes("없음") && stamp.date.trim() !== "";
+            const hasText = stamp.text && !stamp.text.includes("없습니다") && stamp.text.trim() !== "";
+            const hasUrl = stamp.url && stamp.url.trim() !== "";
+            return !!(hasDate && hasText && hasUrl);
         }
-        $('editModal').hidden = true;
-      } catch (error) {
-        console.error(error);
-        $('editError').textContent = '저장하지 못했습니다. Firebase 보안 규칙을 확인해주세요.';
-      } finally {
-        button.disabled = false;
-      }
-    }
 
-    async function resetSchedule() {
-      if (!state.currentUser || !state.selectedKey) return;
-      if (!confirm('이 날짜의 일정을 삭제할까요?')) return;
-      try {
-        await deleteDoc(doc(db, 'schedules', state.selectedKey));
-        $('editModal').hidden = true;
-      } catch (error) {
-        console.error(error);
-        $('editError').textContent = '삭제하지 못했습니다. Firebase 보안 규칙을 확인해주세요.';
-      }
-    }
-
-    function openLoginModal() {
-      $('loginForm').reset();
-      $('loginError').textContent = '';
-      $('loginModal').hidden = false;
-      requestAnimationFrame(() => $('loginEmail').focus());
-    }
-
-    async function login(event) {
-      event.preventDefault();
-      const button = $('loginSubmitBtn');
-      button.disabled = true;
-      $('loginError').textContent = '로그인 정보를 확인하고 있습니다…';
-      try {
-        await setPersistence(auth, browserSessionPersistence);
-        const credential = await signInWithEmailAndPassword(auth, $('loginEmail').value.trim(), $('loginPassword').value);
-        if (credential.user.uid !== ADMIN_UID) {
-          await signOut(auth);
-          throw new Error('not-admin');
+        function parseStampDate(dateStr) {
+            if (!dateStr || dateStr.includes("없음")) return 0;
+            const parts = dateStr.split('.').map(p => parseInt(p.trim(), 10));
+            if (parts.length >= 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+                return new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+            }
+            return 0;
         }
-        $('loginModal').hidden = true;
-      } catch (error) {
-        console.error(error?.code || error?.message || error);
-        $('loginPassword').value = '';
-        $('loginError').textContent = '관리자 이메일 또는 비밀번호를 확인해주세요.';
-      } finally {
-        button.disabled = false;
-      }
-    }
 
-    async function imageFileToDataUrl(file) {
-      if (!file.type.match(/^image\/(png|jpeg|webp)$/)) throw new Error('PNG, JPG 또는 WebP 이미지만 선택해주세요.');
-      const source = await createImageBitmap(file);
-      let scale = Math.min(1, 1800 / Math.max(source.width, source.height));
-      let quality = .86;
-      let blob = null;
-      for (let attempt = 0; attempt < 7; attempt++) {
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(source.width * scale));
-        canvas.height = Math.max(1, Math.round(source.height * scale));
-        canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
-        blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
-        if (blob && blob.size <= 650 * 1024) break;
-        scale *= .82;
-        quality = Math.max(.62, quality - .06);
-      }
-      source.close();
-      if (!blob || blob.size > 700 * 1024) throw new Error('이미지 용량을 충분히 줄이지 못했습니다. 더 작은 이미지를 선택해주세요.');
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error('이미지를 읽지 못했습니다.'));
-        reader.readAsDataURL(blob);
-      });
-    }
+        function getLatestStampTimestamp(boardId) {
+            for (let s = STAMPS_PER_BOARD; s >= 1; s--) {
+                const key = `${boardId}-${s}`;
+                const stamp = state.stamps[key];
+                if (isStampComplete(stamp)) {
+                    const time = parseStampDate(stamp.date);
+                    if (time > 0) return time;
+                }
+            }
+            return 0;
+        }
 
-    async function uploadWeeklyImage(event) {
-      const file = event.target.files?.[0];
-      event.target.value = '';
-      if (!file || !state.currentUser) return;
-      const targetWeek = weekKey;
-      $('uploadImageBtn').disabled = true;
-      uploadStatus.textContent = '이미지를 최적화하고 업로드하고 있습니다…';
-      try {
-        const imageData = await imageFileToDataUrl(file);
-        await setDoc(doc(db, 'schedule_settings', 'weeklyImage_' + targetWeek), { imageData, weekStart: targetWeek, updatedAt: new Date().toISOString() });
-        uploadStatus.textContent = '주간 이미지가 저장되었습니다.';
-      } catch (error) {
-        console.error(error);
-        uploadStatus.textContent = error.message || '이미지를 저장하지 못했습니다.';
-      } finally {
-        $('uploadImageBtn').disabled = false;
-      }
-    }
+        function countValidStamps(boardId) {
+            let count = 0;
+            for (let s = 1; s <= STAMPS_PER_BOARD; s++) {
+                const key = `${boardId}-${s}`;
+                if (isStampComplete(state.stamps[key])) {
+                    count++;
+                }
+            }
+            return count;
+        }
 
-    async function deleteWeeklyImage() {
-      if (!state.currentUser || !confirm('현재 주간 이미지를 삭제할까요?')) return;
-      const targetWeek = weekKey;
-      try {
-        await setDoc(doc(db, 'schedule_settings', 'weeklyImage_' + targetWeek), {imageData:'', weekStart:targetWeek});
-        uploadStatus.textContent = '주간 이미지가 삭제되었습니다.';
-      } catch (error) {
-        console.error(error);
-        uploadStatus.textContent = '이미지를 삭제하지 못했습니다.';
-      }
-    }
+        function renderGoods() {
+            const container = document.getElementById("goods-grid-container");
+            container.innerHTML = "";
+            goodsCardContainer.classList.toggle('is-admin', !!state.currentUser);
 
-    function changeMonth(offset) {
-      const next = new Date(state.year, state.month + offset, 1);
-      state.year = next.getFullYear();
-      state.month = next.getMonth();
-      state.selectedKey = null;
-      renderCalendar();
-    }
+            state.goods.forEach(item => {
+                const itemDiv = document.createElement("div");
+                itemDiv.className = "goods-item";
 
-    $('prevMonthBtn').addEventListener('click', () => changeMonth(-1));
-    $('nextMonthBtn').addEventListener('click', () => changeMonth(1));
-    $('todayBtn').addEventListener('click', () => {
-      const today = new Date();
-      state.year = today.getFullYear();
-      state.month = today.getMonth();
-      state.selectedKey = dateKey(today);
-      renderCalendar();
-    });
-    monthlyTab.addEventListener('click', () => setView('monthly'));
-    weeklyTab.addEventListener('click', () => setView('weekly'));
-    authBtn.addEventListener('click', async () => state.currentUser ? signOut(auth) : openLoginModal());
-    $('loginForm').addEventListener('submit', login);
-    $('editForm').addEventListener('submit', saveSchedule);
-    $('resetScheduleBtn').addEventListener('click', resetSchedule);
-    $('uploadImageBtn').addEventListener('click', () => $('weeklyImageInput').click());
-    $('weeklyImageInput').addEventListener('change', uploadWeeklyImage);
-    $('deleteImageBtn').addEventListener('click', deleteWeeklyImage);
+                const badgeClass = item.isSpecial ? "goods-badge-no special" : "goods-badge-no";
+                const badgeText = item.isSpecial ? `No.${item.id} ◆ 도장 9개` : `No.${item.id}`;
 
-    document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => $(button.dataset.close).hidden = true));
-    document.querySelectorAll('.modal-backdrop').forEach(modal => modal.addEventListener('click', event => {
-      if (event.target === modal) modal.hidden = true;
-    }));
-    window.addEventListener('keydown', event => {
-      if (event.key === 'Escape') document.querySelectorAll('.modal-backdrop:not([hidden])').forEach(modal => modal.hidden = true);
-    });
+                itemDiv.innerHTML = `
+                    <div class="goods-img-wrapper">
+                        <img src="${item.img}" alt="${item.name}" class="goods-img">
+                    </div>
+                    <span class="${badgeClass}">${badgeText}</span>
+                    <h3 class="goods-name">${item.name}</h3>
+                    <p class="goods-info">${item.desc}</p>
+                `;
 
-    onAuthStateChanged(auth, async user => {
-      const isAdmin = !!user && user.uid === ADMIN_UID;
-      if (user && !isAdmin) {
-        await signOut(auth);
-        return;
-      }
-      state.currentUser = isAdmin ? user : null;
-      document.body.classList.toggle('is-admin', isAdmin);
-      authBtn.classList.toggle('logged-in', isAdmin);
-      authBtn.textContent = isAdmin ? '로그아웃' : '관리자 로그인';
-    });
+                itemDiv.onclick = () => {
+                    if (state.currentUser) openGoodsEditModal(item);
+                };
 
-    onSnapshot(collection(db, 'schedules'), snapshot => {
-      const schedules = {};
-      snapshot.forEach(item => { schedules[item.id] = item.data(); });
-      state.schedules = schedules;
-      renderCalendar();
-    }, error => {
-      console.error('일정 불러오기 실패:', error);
-      renderCalendar();
-    });
+                container.appendChild(itemDiv);
+            });
+        }
 
-    const categories = ['', '예열', '1부', '2부', '3부', '4부', '후열'];
-    function validColor(color) { return /^#[0-9a-f]{6}$/i.test(color || '') ? color : '#e4edf8'; }
-    function paintChip(element, color) {
-      color=validColor(color); element.style.backgroundColor=color;
-      const rgb=[1,3,5].map(i=>parseInt(color.slice(i,i+2),16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);
-      element.style.color=rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722>.179?'#18202a':'#ffffff';
-    }
-    function itemsForDate(key) {
-      const result=[];
-      Object.entries(state.schedules).sort(([a],[b])=>a.localeCompare(b)).forEach(([startDate,data])=>{
-        (data.items||[]).forEach(item=>{
-          const endDate=item.endDate >= startDate ? item.endDate : startDate;
-          if((item.text||item.time) && startDate<=key && key<=endDate) result.push({...item,startDate,endDate});
+        function openGoodsEditModal(item) {
+            state.activeEditingGoods = item;
+            goodsModalTitle.textContent = `No.${item.id} 굿즈 정보 수정`;
+            goodsPreviewImg.src = item.img || "";
+            editGoodsImg.value = item.img || "";
+            editGoodsName.value = item.name || "";
+            editGoodsDesc.value = item.desc || "";
+
+            goodsEditModal.style.display = "flex";
+        }
+
+        function closeGoodsEditModal() {
+            goodsEditModal.style.display = "none";
+            state.activeEditingGoods = null;
+        }
+
+        editGoodsImg.addEventListener('input', (e) => {
+            goodsPreviewImg.src = e.target.value.trim();
         });
-      }); return result;
-    }
-    function addRow(item={}) {
-      const row=document.createElement('div'); row.className='schedule-row'; row.dataset.legacyTime=item.time||'';
-      row.innerHTML=`<select class="category-input" aria-label="일정 카테고리">${categories.map(c=>`<option value="${c}">${c||'구분 없음'}</option>`).join('')}</select><input class="text-input" type="text" maxlength="60" placeholder="일정 내용" aria-label="일정 내용"><input class="color-input" type="color" aria-label="일정 색상" list="eventColors"><div class="row-dates"><select class="duration-input" aria-label="일정 기간"><option value="single">하루 일정</option><option value="multi">여러 날 일정</option></select><span>시작 ${escapeHtml(state.selectedKey)}</span><label class="end-label" hidden>종료 <input class="end-input" type="date" aria-label="종료 날짜"></label><button class="soft-btn danger-btn" type="button" aria-label="이 일정 제거">제거</button></div>`;
-      row.querySelector('.category-input').value=categories.includes(item.category)?item.category:'';
-      row.querySelector('.category-input').onchange=()=>{row.dataset.legacyTime='';};
-      row.querySelector('.text-input').value=item.text||'';
-      row.querySelector('.color-input').value=validColor(item.color);
-      const duration=row.querySelector('.duration-input'), end=row.querySelector('.end-input');
-      duration.value=item.endDate>state.selectedKey?'multi':'single'; end.value=item.endDate||state.selectedKey; end.min=state.selectedKey;
-      const update=()=>{row.querySelector('.end-label').hidden=duration.value!=='multi'; end.required=duration.value==='multi';}; duration.onchange=update; update();
-      row.querySelector('button').onclick=()=>row.remove(); $('scheduleRows').append(row);
-      if(item.time){const note=document.createElement('p'); note.className='hint';note.style.gridColumn='1/-1';note.textContent='기존 시간 '+item.time+' · 카테고리를 선택하면 시간 대신 표시됩니다.';row.append(note);}
-    }
-    $('addScheduleRow').onclick=()=>addRow();
-    const defaultColors=[];
-    const palette=document.createElement('datalist');palette.id='eventColors';document.body.append(palette);
-    const paletteStorageKey='scheduleCustomColors';
-    const normalizeColor=value=>{
-      let color=String(value||'').trim().toLowerCase();
-      if(!color.startsWith('#'))color='#'+color;
-      if(/^#[0-9a-f]{3}$/.test(color))color='#'+[...color.slice(1)].map(c=>c+c).join('');
-      return /^#[0-9a-f]{6}$/.test(color)?color:null;
-    };
-    let customColors=[];
-    try {
-      const saved=JSON.parse(localStorage.getItem(paletteStorageKey)||'[]');
-      if(Array.isArray(saved))customColors=[...new Set(saved.filter(c=>typeof c==='string').map(normalizeColor).filter(c=>c&&!defaultColors.includes(c)))];
-    } catch {}
-    function saveCustomColors(){
-      try{localStorage.setItem(paletteStorageKey,JSON.stringify(customColors));return true;}
-      catch{$('paletteMessage').textContent='브라우저 저장이 제한되어 이번 화면에서만 사용할 수 있습니다.';return false;}
-    }
-    function renderCustomColors(){
-      palette.replaceChildren();
-      [...defaultColors,...customColors].forEach(color=>{const option=document.createElement('option');option.value=color;palette.append(option);});
-      $('savedColors').replaceChildren();
-      customColors.forEach(color=>{
-        const group=document.createElement('span');group.className='saved-color';
-        const swatch=document.createElement('i');swatch.style.backgroundColor=color;swatch.setAttribute('aria-hidden','true');
-        const label=document.createElement('span');label.textContent=color;
-        const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label',color+' 색상표에서 제거');
-        remove.onclick=()=>{customColors=customColors.filter(c=>c!==color);renderCustomColors();$('paletteMessage').textContent='색상표에서 제거했습니다. 기존 일정 색상은 유지됩니다.';saveCustomColors();};
-        group.append(swatch,label,remove);$('savedColors').append(group);
-      });
-    }
-    $('customColorPicker').oninput=()=>{$('customColorHex').value=$('customColorPicker').value;};
-    $('customColorHex').oninput=()=>{const color=normalizeColor($('customColorHex').value);if(color)$('customColorPicker').value=color;};
-    function addCustomColor(){
-      const color=normalizeColor($('customColorHex').value);
-      if(!color){$('paletteMessage').textContent='올바른 색상 코드를 입력해주세요. 예: #ececec';return;}
-      if([...defaultColors,...customColors].includes(color)){$('paletteMessage').textContent='이미 색상표에 있는 색상입니다.';return;}
-      customColors.push(color);renderCustomColors();
-      $('customColorHex').value=color;$('customColorPicker').value=color;
-      if(saveCustomColors())$('paletteMessage').textContent=color+' 추가 완료. 일정의 색상표를 다시 열어 선택해주세요.';
-    }
-    $('addCustomColor').onclick=addCustomColor;
-    $('customColorHex').onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();addCustomColor();}};
-    renderCustomColors();
-    const themes={
-      white:['#f7f8fb','#ffffff','#24262b','#8b909a','#e6e8ec','#e46f94','#fce8ef','#fcfcfd'],
-      pink:['#fff0f5','#fffafd','#492c39','#957383','#eed4df','#dc7198','#f9d7e6','#fff3f8'],
-      blue:['#edf4ff','#fbfdff','#24394f','#71859c','#cfdfef','#679ed3','#dcecff','#f0f6ff'],
-      yellow:['#fff9e6','#fffef7','#4d432b','#938567','#e9dfbd','#b99837','#f6eabb','#fff9e6'],
-      chocolate:['#eee5df','#fbf5ef','#4c352a','#958176','#d9c8bc','#a57458','#ead4c4','#f4e9df'],
-      gray:['#e9ebee','#f6f7f8','#30353d','#7c828c','#d4d7dc','#8995a8','#dee2e8','#eff0f2'],
-      dark:['#151820','#222731','#eef0f5','#aab2c1','#414957','#ad88c8','#493858','#292f3b']
-    };
-    function applyTheme(name){const colors=themes[name]||themes.white;['--bg','--surface','--text','--muted','--line','--pink','--pink-soft','--hover'].forEach((key,i)=>document.documentElement.style.setProperty(key,colors[i]));document.documentElement.style.setProperty('--input',colors[1]);document.documentElement.style.colorScheme=name==='dark'?'dark':'light';}
-    try{$('themeSelect').value=Object.hasOwn(themes,localStorage.getItem('scheduleTheme'))?localStorage.getItem('scheduleTheme'):'white';}catch{}
-    applyTheme($('themeSelect').value);$('themeSelect').onchange=()=>{applyTheme($('themeSelect').value);try{localStorage.setItem('scheduleTheme',$('themeSelect').value);}catch{}};
-    const parseDate=key=>new Date(key+'T12:00:00');
-    function monday(key){const d=parseDate(key);d.setDate(d.getDate()-(d.getDay()+6)%7);return dateKey(d);}
-    let chosenDate=dateKey(new Date()),weekKey=monday(chosenDate),miniDate=parseDate(chosenDate),stopWeek=null,weeklyExists=false,weekImageData='',legacyImage=null;
-    function showWeekImage(){
-      const legacyWeek=legacyImage?.weekStart || (legacyImage?.updatedAt ? monday(dateKey(new Date(legacyImage.updatedAt))) : monday(dateKey(new Date())));
-      const isLegacy=!weeklyExists&&legacyWeek===weekKey&&!!legacyImage?.imageData;
-      const imageData=weeklyExists?weekImageData:isLegacy?legacyImage.imageData:'';
-      weeklyImage.hidden=!imageData;weeklyEmpty.hidden=!!imageData;
-      if(imageData)weeklyImage.src=imageData;else weeklyImage.removeAttribute('src');
-      weeklyEmpty.textContent='이 주에 등록된 스케줄 이미지가 없습니다.';
-      if(isLegacy)uploadStatus.textContent='기존 이미지를 업로드 날짜가 속한 주에 표시했습니다. 다른 주의 이미지라면 해당 주를 선택해 다시 업로드해주세요.';
-    }
-    function subscribeWeek(){
-      if(stopWeek)stopWeek();const requestedWeek=weekKey;weeklyExists=false;weekImageData='';weeklyImage.hidden=true;weeklyImage.removeAttribute('src');weeklyEmpty.hidden=false;weeklyEmpty.textContent='주간 이미지를 불러오고 있습니다…';uploadStatus.textContent='';
-      stopWeek=onSnapshot(doc(db,'schedule_settings','weeklyImage_'+weekKey),snap=>{if(requestedWeek!==weekKey)return;weeklyExists=snap.exists();weekImageData=weeklyExists?snap.data().imageData||'':'';showWeekImage();},error=>{if(requestedWeek!==weekKey)return;console.error(error);weeklyEmpty.textContent='주간 이미지를 불러오지 못했습니다.';uploadStatus.textContent='연결 상태와 Firebase 읽기 권한을 확인해주세요.';});
-    }
-    function selectWeek(key){chosenDate=key;miniDate=parseDate(key);const next=monday(key);if(next!==weekKey){weekKey=next;subscribeWeek();}renderWeek();}
-    function renderWeek(){
-      const last=parseDate(weekKey);last.setDate(last.getDate()+6);$('weekLabel').textContent=weekKey+' ~ '+dateKey(last);
-      $('miniLabel').textContent=miniDate.getFullYear()+'년 '+(miniDate.getMonth()+1)+'월';const grid=$('miniGrid');grid.innerHTML='';
-      ['월','화','수','목','금','토','일'].forEach(day=>{const span=document.createElement('span');span.textContent=day;grid.append(span);});
-      const first=new Date(miniDate.getFullYear(),miniDate.getMonth(),1,12);first.setDate(1-(first.getDay()+6)%7);
-      for(let i=0;i<42;i++){const d=new Date(first);d.setDate(d.getDate()+i);const key=dateKey(d);const button=document.createElement('button');button.type='button';button.textContent=d.getDate();button.setAttribute('aria-label',displayDate(key)+' 주 선택');button.classList.toggle('in-week',monday(key)===weekKey);button.classList.toggle('chosen',key===chosenDate);button.classList.toggle('outside',d.getMonth()!==miniDate.getMonth());button.onclick=()=>selectWeek(key);grid.append(button);}
-    }
-    function moveWeek(offset){const d=parseDate(weekKey);d.setDate(d.getDate()+offset*7);selectWeek(dateKey(d));}
-    $('prevWeek').onclick=()=>moveWeek(-1);$('nextWeek').onclick=()=>moveWeek(1);$('thisWeek').onclick=()=>selectWeek(dateKey(new Date()));
-    $('miniPrev').onclick=()=>{miniDate=new Date(miniDate.getFullYear(),miniDate.getMonth()-1,1,12);renderWeek();};$('miniNext').onclick=()=>{miniDate=new Date(miniDate.getFullYear(),miniDate.getMonth()+1,1,12);renderWeek();};
-    onSnapshot(doc(db,'schedule_settings','weeklyImage'),snap=>{legacyImage=snap.exists()?snap.data():null;showWeekImage();},error=>console.error('기존 이미지 불러오기 실패',error));
-    subscribeWeek();renderWeek();
 
-    setView('monthly');
-    renderCalendar();
-  </script>
+        async function saveGoodsData() {
+            if (!state.currentUser || !state.activeEditingGoods) return;
+
+            const updatedItem = {
+                id: state.activeEditingGoods.id,
+                name: editGoodsName.value.trim() || state.activeEditingGoods.name,
+                desc: editGoodsDesc.value.trim() || state.activeEditingGoods.desc,
+                img: editGoodsImg.value.trim() || state.activeEditingGoods.img,
+                isSpecial: !!state.activeEditingGoods.isSpecial
+            };
+
+            try {
+                await setDoc(doc(db, "hotclips_goods", String(updatedItem.id)), updatedItem);
+                closeGoodsEditModal();
+            } catch (err) {
+                console.error("굿즈 정보 저장 실패:", err);
+                alert("굿즈 저장 중 오류가 발생했습니다: " + err.message);
+            }
+        }
+
+        function renderBoards() {
+            const container = document.getElementById("boards-container");
+            const noResultElem = document.getElementById("no-result-msg");
+            
+            Array.from(container.children).forEach(child => {
+                if (child.id !== 'no-result-msg') child.remove();
+            });
+
+            const list = Object.entries(state.boards).map(([id, data]) => {
+                const actualCount = countValidStamps(id);
+                return {
+                    id: String(id),
+                    name: data.name || `도장판 #${id}`,
+                    count: actualCount,
+                    latestTime: getLatestStampTimestamp(id)
+                };
+            });
+
+            if (state.currentSortMode === 'name') {
+                list.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+            } else if (state.currentSortMode === 'stamps') {
+                list.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ko'));
+            } else if (state.currentSortMode === 'latest') {
+                list.sort((a, b) => b.latestTime - a.latestTime || b.count - a.count || a.name.localeCompare(b.name, 'ko'));
+            }
+
+            let visibleCount = 0;
+            const fragment = document.createDocumentFragment();
+
+            list.forEach(item => {
+                if (state.searchQuery && !item.name.toLowerCase().includes(state.searchQuery)) return;
+
+                visibleCount++;
+
+                const card = document.createElement("div");
+                card.className = `board-card ${state.currentUser ? 'is-admin' : ''}`;
+                card.id = `board-card-${item.id}`;
+
+                card.innerHTML = `
+                    <div class="board-header">
+                        <div class="board-title-group">
+                            <h2 class="board-title">${item.name}</h2>
+                            <div class="board-admin-btns">
+                                <button class="btn-board-edit">수정</button>
+                                <button class="btn-board-delete">삭제</button>
+                            </div>
+                        </div>
+                        <span class="board-badge">도장 ${item.count} / ${STAMPS_PER_BOARD}개</span>
+                    </div>
+                    <div class="stamp-grid"></div>
+                `;
+
+                const grid = card.querySelector('.stamp-grid');
+
+                for (let s = 1; s <= STAMPS_PER_BOARD; s++) {
+                    const btn = document.createElement("button");
+                    const stampKey = `${item.id}-${s}`;
+                    const isCompleted = isStampComplete(state.stamps[stampKey]);
+
+                    btn.className = `stamp-btn${s % 3 === 0 ? ' special' : ''}${isCompleted ? ' active' : ''}`;
+                    
+                    if (isCompleted) {
+                        btn.innerHTML = `<img src="Jerry.png" alt="도장" class="stamp-icon"><span class="stamp-number">${s}</span>`;
+                    } else {
+                        btn.innerHTML = `<span class="stamp-number">${s}</span>`;
+                    }
+
+                    btn.onclick = () => openModal(item.id, s, isCompleted);
+                    grid.appendChild(btn);
+                }
+
+                const btnEdit = card.querySelector('.btn-board-edit');
+                const btnDel = card.querySelector('.btn-board-delete');
+
+                if (btnEdit) {
+                    btnEdit.onclick = (e) => {
+                        e.stopPropagation();
+                        handleEditBoardPrompt(item.id, item.name);
+                    };
+                }
+                if (btnDel) {
+                    btnDel.onclick = (e) => {
+                        e.stopPropagation();
+                        handleDeleteBoard(item.id, item.name);
+                    };
+                }
+
+                fragment.appendChild(card);
+            });
+
+            container.appendChild(fragment);
+
+            if (visibleCount === 0) {
+                noResultElem.textContent = `'${state.searchQuery}' 검색 결과와 일치하는 도장판이 없습니다.`;
+                noResultElem.style.display = 'block';
+            } else {
+                noResultElem.style.display = 'none';
+            }
+        }
+
+        function openModal(boardIndex, stampIndex, isCompleted) {
+            state.activeEditingStamp = { boardId: String(boardIndex), stampIndex };
+            const key = `${boardIndex}-${stampIndex}`;
+            const data = state.stamps[key] || { date: "", text: "", url: "" };
+
+            modalTitle.textContent = `${stampIndex}번 도장`;
+
+            if (isCompleted) {
+                modalDot.style.backgroundColor = (stampIndex % 3 === 0) ? "#b08968" : "#ff758f";
+            } else {
+                modalDot.style.backgroundColor = (stampIndex % 3 === 0) ? "#ede0d4" : "#ffe3ea";
+            }
+
+            if (state.currentUser) {
+                modalViewMode.style.display = 'none';
+                modalEditMode.style.display = 'flex';
+                editStampDate.value = data.date || "";
+                editStampText.value = data.text || "";
+                editStampUrl.value = data.url || "";
+            } else {
+                modalViewMode.style.display = 'flex';
+                modalEditMode.style.display = 'none';
+                modalDate.textContent = data.date || "날짜 정보 없음";
+                modalText.textContent = data.text || "클립 정보가 없습니다.";
+
+                if (data.url) {
+                    modalLink.href = data.url;
+                    modalLink.textContent = data.url.replace(/^https?:\/\//, "");
+                    modalLink.style.display = "inline";
+                } else {
+                    modalLink.textContent = "링크 없음";
+                    modalLink.removeAttribute("href");
+                }
+            }
+
+            infoModal.style.display = "flex";
+        }
+
+        function closeModal() {
+            infoModal.style.display = "none";
+            state.activeEditingStamp = null;
+        }
+
+        async function saveStampData() {
+            if (!state.currentUser || !state.activeEditingStamp) return;
+
+            const { boardId, stampIndex } = state.activeEditingStamp;
+            const key = `${boardId}-${stampIndex}`;
+
+            const date = editStampDate.value.trim();
+            const text = editStampText.value.trim();
+            const url = editStampUrl.value.trim();
+
+            if (!date || !text || !url) {
+                alert("도장을 찍으려면 날짜, 클립 정보, 영상 링크 3가지를 모두 입력해야 합니다.");
+                return;
+            }
+
+            if (stampIndex > 1) {
+                const prevKey = `${boardId}-${stampIndex - 1}`;
+                if (!isStampComplete(state.stamps[prevKey])) {
+                    alert(`이전 도장(${stampIndex - 1}번)을 먼저 입력해야 다음 도장을 찍을 수 있습니다.`);
+                    return;
+                }
+            }
+
+            const newStampData = { date, text, url };
+
+            try {
+                await setDoc(doc(db, "hotclips_stamps", key), newStampData);
+                state.stamps[key] = newStampData;
+
+                const updatedCount = countValidStamps(boardId);
+                await setDoc(doc(db, "hotclips_boards", boardId), {
+                    name: state.boards[boardId]?.name || `도장판 #${boardId}`,
+                    count: updatedCount
+                }, { merge: true });
+
+                closeModal();
+                renderBoards();
+            } catch (err) {
+                console.error("도장 정보 저장 실패:", err);
+                alert("저장 중 오류가 발생했습니다: " + err.message);
+            }
+        }
+
+        async function resetStampData() {
+            if (!state.currentUser || !state.activeEditingStamp) return;
+
+            const { boardId, stampIndex } = state.activeEditingStamp;
+            const key = `${boardId}-${stampIndex}`;
+
+            if (stampIndex < STAMPS_PER_BOARD) {
+                const nextKey = `${boardId}-${stampIndex + 1}`;
+                if (isStampComplete(state.stamps[nextKey])) {
+                    alert(`다음 도장(${stampIndex + 1}번)이 이미 등록되어 있어 초기화할 수 없습니다.\n뒷 번호 도장부터 먼저 초기화해주세요.`);
+                    return;
+                }
+            }
+
+            if (!confirm(`${stampIndex}번 도장 내용을 초기화(삭제)하시겠습니까?`)) return;
+
+            try {
+                await deleteDoc(doc(db, "hotclips_stamps", key));
+                delete state.stamps[key];
+
+                const updatedCount = countValidStamps(boardId);
+                await setDoc(doc(db, "hotclips_boards", boardId), {
+                    name: state.boards[boardId]?.name || `도장판 #${boardId}`,
+                    count: updatedCount
+                }, { merge: true });
+
+                closeModal();
+                renderBoards();
+            } catch (err) {
+                console.error("도장 초기화 실패:", err);
+                alert("초기화 중 오류가 발생했습니다: " + err.message);
+            }
+        }
+
+        async function handleAddBoard() {
+            if (!state.currentUser) {
+                alert("관리자 로그인이 필요합니다.");
+                return;
+            }
+
+            const name = prompt("새로 추가할 시청자 닉네임을 입력하세요:");
+            if (!name || !name.trim()) return;
+
+            const numericIds = Object.keys(state.boards)
+                .map(k => parseInt(k, 10))
+                .filter(n => !isNaN(n));
+            const newId = numericIds.length > 0 ? Math.max(...numericIds) + 1 : 1;
+
+            try {
+                await setDoc(doc(db, "hotclips_boards", String(newId)), {
+                    name: name.trim(),
+                    count: 0
+                });
+                alert(`'${name.trim()}' 님의 도장판이 생성되었습니다.`);
+            } catch (err) {
+                console.error("도장판 생성 오류:", err);
+                alert("도장판 생성 실패: " + err.message);
+            }
+        }
+
+        async function handleEditBoardPrompt(id, currentName) {
+            const newName = prompt("수정할 닉네임을 입력하세요:", currentName);
+            if (newName === null || !newName.trim()) return;
+
+            try {
+                await setDoc(doc(db, "hotclips_boards", String(id)), {
+                    name: newName.trim(),
+                    count: countValidStamps(id)
+                }, { merge: true });
+            } catch (err) {
+                console.error("도장판 수정 오류:", err);
+                alert("도장판 수정 실패: " + err.message);
+            }
+        }
+
+        async function handleDeleteBoard(id, name) {
+            if (!confirm(`'${name}' 님의 도장판과 등록된 모든 도장 정보를 삭제하시겠습니까?`)) return;
+
+            try {
+                await deleteDoc(doc(db, "hotclips_boards", String(id)));
+
+                for (let s = 1; s <= STAMPS_PER_BOARD; s++) {
+                    const key = `${id}-${s}`;
+                    if (state.stamps[key]) {
+                        await deleteDoc(doc(db, "hotclips_stamps", key));
+                        delete state.stamps[key];
+                    }
+                }
+            } catch (err) {
+                console.error("도장판 삭제 오류:", err);
+                alert("도장판 삭제 실패: " + err.message);
+            }
+        }
+
+        async function handleAuthToggle() {
+            if (state.currentUser) {
+                try {
+                    await signOut(auth);
+                } catch (error) {
+                    console.error("로그아웃 실패:", error);
+                    alert("로그아웃하지 못했습니다. 잠시 후 다시 시도해주세요.");
+                }
+            } else {
+                openLoginModal();
+            }
+        }
+
+        function openLoginModal() {
+            loginForm.reset();
+            loginError.textContent = "";
+            loginModal.style.display = "flex";
+            requestAnimationFrame(() => loginEmail.focus());
+        }
+
+        function closeLoginModal() {
+            loginModal.style.display = "none";
+            loginForm.reset();
+            loginError.textContent = "";
+        }
+
+        async function handleLoginSubmit(event) {
+            event.preventDefault();
+            const email = loginEmail.value.trim();
+            const password = loginPassword.value;
+            if (!email || !password) return;
+
+            loginSubmitBtn.disabled = true;
+            loginError.textContent = "로그인 정보를 확인하고 있습니다…";
+
+            try {
+                await setPersistence(auth, browserSessionPersistence);
+                const credential = await signInWithEmailAndPassword(auth, email, password);
+                if (credential.user.uid !== ADMIN_UID) {
+                    await signOut(auth);
+                    throw new Error("not-admin");
+                }
+                closeLoginModal();
+            } catch (error) {
+                console.error("로그인 실패:", error?.code || error?.message || error);
+                loginPassword.value = "";
+                loginError.textContent = "관리자 이메일 또는 비밀번호를 확인해주세요.";
+                loginPassword.focus();
+            } finally {
+                loginSubmitBtn.disabled = false;
+            }
+        }
+
+        function setSortMode(mode) {
+            state.currentSortMode = mode;
+            Object.keys(sortButtons).forEach(k => sortButtons[k].classList.toggle('active', k === mode));
+            renderBoards();
+        }
+
+        function init() {
+            renderGoods();
+
+            onAuthStateChanged(auth, async user => {
+                const isAdmin = !!user && user.uid === ADMIN_UID;
+                if (user && !isAdmin) {
+                    await signOut(auth);
+                    return;
+                }
+
+                state.currentUser = isAdmin ? user : null;
+                authBtn.textContent = isAdmin ? "로그아웃" : "관리자 로그인";
+                authBtn.classList.toggle('logged-in', isAdmin);
+                adminControlsBar.classList.toggle('active', isAdmin);
+                renderGoods();
+                renderBoards();
+            });
+
+            onSnapshot(collection(db, "hotclips_goods"), snapshot => {
+                if (snapshot.empty) {
+                    state.goods = defaultGoodsList;
+                    if (state.currentUser) {
+                        defaultGoodsList.forEach(g => setDoc(doc(db, "hotclips_goods", String(g.id)), g));
+                    }
+                } else {
+                    const loadedGoods = [];
+                    snapshot.forEach(docSnap => loadedGoods.push(docSnap.data()));
+                    loadedGoods.sort((a, b) => a.id - b.id);
+                    state.goods = loadedGoods;
+                }
+                renderGoods();
+            });
+
+            onSnapshot(collection(db, "hotclips_boards"), snapshot => {
+                if (snapshot.empty) {
+                    state.boards = defaultBoards;
+                    if (state.currentUser) {
+                        Object.entries(defaultBoards).forEach(([id, bData]) => setDoc(doc(db, "hotclips_boards", id), bData));
+                    }
+                } else {
+                    const newBoards = {};
+                    snapshot.forEach(docSnap => { newBoards[docSnap.id] = docSnap.data(); });
+                    state.boards = newBoards;
+                }
+                renderBoards();
+            });
+
+            onSnapshot(collection(db, "hotclips_stamps"), snapshot => {
+                const newStamps = {};
+                snapshot.forEach(docSnap => { newStamps[docSnap.id] = docSnap.data(); });
+                state.stamps = newStamps;
+                renderBoards();
+            });
+
+            authBtn.addEventListener('click', handleAuthToggle);
+            loginForm.addEventListener('submit', handleLoginSubmit);
+            loginCancelBtn.addEventListener('click', closeLoginModal);
+            loginModalCloseIcon.addEventListener('click', closeLoginModal);
+            loginModal.addEventListener('click', (event) => {
+                if (event.target === loginModal) closeLoginModal();
+            });
+            btnAddBoard.addEventListener('click', handleAddBoard);
+            btnSaveStamp.addEventListener('click', saveStampData);
+            btnResetStamp.addEventListener('click', resetStampData);
+            btnSaveGoods.addEventListener('click', saveGoodsData);
+
+            nicknameSearch.addEventListener('input', (e) => {
+                state.searchQuery = e.target.value.trim().toLowerCase();
+                renderBoards();
+            });
+
+            Object.entries(sortButtons).forEach(([mode, btn]) => {
+                btn.addEventListener('click', () => setSortMode(mode));
+            });
+
+            modalCloseIcon.addEventListener('click', closeModal);
+            infoModal.addEventListener('click', (e) => { if (e.target === infoModal) closeModal(); });
+
+            goodsModalCloseIcon.addEventListener('click', closeGoodsEditModal);
+            goodsEditModal.addEventListener('click', (e) => { if (e.target === goodsEditModal) closeGoodsEditModal(); });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    closeGoodsEditModal();
+                    closeLoginModal();
+                }
+            });
+        }
+
+        init();
+    </script>
 </body>
 </html>
-
