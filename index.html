@@ -171,6 +171,14 @@
             font-weight: bold;
         }
 
+        .goods-order-controls { display: flex; gap: 6px; margin-top: auto; padding-top: 12px; }
+        .goods-order-btn { flex: 1; padding: 7px 4px; border: 1px solid #ffccd5; border-radius: 6px; background: #fff0f3; color: #c9184a; cursor: pointer; font-size: 12px; }
+        .goods-order-btn:disabled { opacity: 0.4; cursor: default; }
+        .goods-order-btn:focus-visible { outline: 2px solid #c9184a; outline-offset: 2px; }
+        .goods-order-status { font-size: 13px; color: #c9184a; margin: 0 0 12px; }
+        .goods-order-status:empty { display: none; }
+        .is-admin .goods-item:hover::after { bottom: auto; top: 8px; pointer-events: none; }
+
         .goods-img-wrapper {
             width: 100%;
             aspect-ratio: 1 / 1;
@@ -839,6 +847,7 @@
             이 외 자세한 내용 및 굿즈 신청 방법 등은 카페 공지사항을 참고해 주세요!
         </div>
 
+        <p class="goods-order-status" id="goodsOrderStatus" role="status" aria-live="polite"></p>
         <div class="goods-grid" id="goods-grid-container"></div>
 
         <p class="goods-footer-msg">항상 클립 따주셔서 정말 감사합니다 💖 작게나마 보답이 되었으면 좋겠습니다!</p>
@@ -1138,7 +1147,7 @@
                 empty.textContent = "등록된 상품이 없습니다.";
                 container.appendChild(empty);
             }
-            state.goods.forEach(item => {
+            state.goods.forEach((item, index) => {
                 const itemDiv = document.createElement("div");
                 itemDiv.className = "goods-item";
 
@@ -1155,8 +1164,55 @@
                     if (state.currentUser) openGoodsEditModal(item);
                 };
 
+                if (state.currentUser) {
+                    const controls = document.createElement("div");
+                    controls.className = "goods-order-controls";
+                    [[-1, "← 앞으로"], [1, "뒤로 →"]].forEach(([direction, label]) => {
+                        const button = document.createElement("button");
+                        button.type = "button";
+                        button.className = "goods-order-btn";
+                        button.textContent = label;
+                        button.setAttribute("aria-label", item.name + (direction < 0 ? " 앞으로 이동" : " 뒤로 이동"));
+                        button.disabled = state.goodsBusy || (direction < 0 ? index === 0 : index === state.goods.length - 1);
+                        button.onclick = event => {
+                            event.stopPropagation();
+                            moveGoods(item.id, direction);
+                        };
+                        controls.appendChild(button);
+                    });
+                    itemDiv.appendChild(controls);
+                }
                 container.appendChild(itemDiv);
             });
+        }
+
+        async function moveGoods(id, direction) {
+            if (!state.currentUser || state.goodsBusy || ![-1, 1].includes(direction)) return;
+            const index = state.goods.findIndex(item => String(item.id) === String(id));
+            const target = index + direction;
+            if (index < 0 || target < 0 || target >= state.goods.length) return;
+            const reordered = [...state.goods];
+            [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+            const status = document.getElementById("goodsOrderStatus");
+            state.goodsBusy = true;
+            status.textContent = "순서를 저장하고 있습니다…";
+            renderGoods();
+            try {
+                const batch = writeBatch(db);
+                reordered.forEach((item, order) => {
+                    const data = state.goodsInitialized ? { order } : { ...item, order };
+                    batch.set(doc(db, "hotclips_goods", String(item.id)), data, { merge: true });
+                });
+                batch.set(doc(db, "hotclips_goods", "_catalog"), { initialized: true });
+                await batch.commit();
+                status.textContent = "상품 순서를 저장했습니다.";
+            } catch (err) {
+                console.error("상품 순서 저장 실패:", err);
+                status.textContent = "순서를 저장하지 못했습니다. 다시 시도해주세요.";
+            } finally {
+                state.goodsBusy = false;
+                renderGoods();
+            }
         }
 
         function escapeGoodsText(value) {
