@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>다정현 핫클립 저장소</title>
+    <title>다정현 쿠폰북</title>
     
     <style>
         /* [전체 기본 레이아웃] */
@@ -94,6 +94,10 @@
             gap: 10px;
             margin-bottom: 16px;
         }
+
+        .goods-admin-add { display: none; margin-left: auto; }
+        .is-admin .goods-admin-add { display: inline-block; }
+        .goods-header { flex-wrap: wrap; }
 
         .goods-title {
             font-size: 20px;
@@ -821,15 +825,15 @@
     <!-- 1. 상단 배너 메인 보드 -->
     <div class="container">
         <img src="my-image.png" alt="프로필 사진" class="profile-img">
-        <h1>다정현 핫클립 저장소</h1>
-        <p style="margin: 0; color: #666; font-size: 15px;">원하는 도장을 클릭하여 상세 클립 정보를 확인하세요.</p>
+        <h1>다정현 쿠폰북</h1>
+        <p style="margin: 0; color: #666; font-size: 15px;">다정현 방송에 참여하고 선물을 받아가세요 !</p>
     </div>
 
     <!-- 2. 핫클립 굿즈 안내 박스 -->
     <div class="goods-card" id="goodsCardContainer">
         <div class="goods-header">
-            <h2 class="goods-title">🎁 핫클립 굿즈 안내</h2>
-            <span class="goods-badge-pink">도장 3개마다 보상</span>
+            <h2 class="goods-title">🎁 쿠폰북</h2>
+            <button class="btn-add-board goods-admin-add" id="btnAddGoods" type="button">+ 상품 추가</button>
         </div>
 
         <div class="goods-description">
@@ -948,7 +952,10 @@
                     <label>상세 설명 문구</label>
                     <input type="text" class="modal-input" id="editGoodsDesc" placeholder="보상사용 할까말까 고민되는군요">
                 </div>
-                <button class="modal-btn-save" id="btnSaveGoods">굿즈 정보 저장</button>
+                <div class="modal-btn-row">
+                    <button class="modal-btn-save" id="btnSaveGoods">상품 저장</button>
+                    <button class="modal-btn-reset" id="btnDeleteGoods" type="button">상품 삭제</button>
+                </div>
             </div>
         </div>
     </div>
@@ -989,7 +996,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDNYILtQUpoNjIJOn6PTYl_BghPS5ieBaE",
@@ -1029,6 +1036,8 @@
         const state = {
             currentUser: null,
             goods: defaultGoodsList,
+            goodsInitialized: false,
+            goodsBusy: false,
             boards: {},
             stamps: {},
             currentSortMode: 'name',
@@ -1071,6 +1080,8 @@
         const editGoodsName = document.getElementById('editGoodsName');
         const editGoodsDesc = document.getElementById('editGoodsDesc');
         const btnSaveGoods = document.getElementById('btnSaveGoods');
+        const btnAddGoods = document.getElementById('btnAddGoods');
+        const btnDeleteGoods = document.getElementById('btnDeleteGoods');
         const loginModal = document.getElementById('login-modal');
         const loginForm = document.getElementById('loginForm');
         const loginEmail = document.getElementById('loginEmail');
@@ -1125,20 +1136,25 @@
             container.innerHTML = "";
             goodsCardContainer.classList.toggle('is-admin', !!state.currentUser);
 
-            state.goods.forEach(item => {
+            if (!state.goods.length) {
+                const empty = document.createElement("p");
+                empty.textContent = "등록된 상품이 없습니다.";
+                container.appendChild(empty);
+            }
+            state.goods.forEach((item, index) => {
                 const itemDiv = document.createElement("div");
                 itemDiv.className = "goods-item";
 
                 const badgeClass = item.isSpecial ? "goods-badge-no special" : "goods-badge-no";
-                const badgeText = item.isSpecial ? `No.${item.id} ◆ 도장 9개` : `No.${item.id}`;
+                const badgeText = item.isSpecial ? `No.${index + 1} ◆ 도장 9개` : `No.${index + 1}`;
 
                 itemDiv.innerHTML = `
                     <div class="goods-img-wrapper">
-                        <img src="${item.img}" alt="${item.name}" class="goods-img">
+                        <img src="${escapeGoodsText(item.img)}" alt="${escapeGoodsText(item.name)}" class="goods-img">
                     </div>
                     <span class="${badgeClass}">${badgeText}</span>
-                    <h3 class="goods-name">${item.name}</h3>
-                    <p class="goods-info">${item.desc}</p>
+                    <h3 class="goods-name">${escapeGoodsText(item.name)}</h3>
+                    <p class="goods-info">${escapeGoodsText(item.desc)}</p>
                 `;
 
                 itemDiv.onclick = () => {
@@ -1149,9 +1165,15 @@
             });
         }
 
-        function openGoodsEditModal(item) {
+        function escapeGoodsText(value) {
+            return String(value || "").replace(/[&<>"']/g, c => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));
+        }
+
+        function openGoodsEditModal(item = {}) {
+            if (!state.currentUser || state.goodsBusy) return;
+            btnDeleteGoods.style.display = item.id == null ? "none" : "block";
             state.activeEditingGoods = item;
-            goodsModalTitle.textContent = `No.${item.id} 굿즈 정보 수정`;
+            goodsModalTitle.textContent = item.id == null ? "상품 추가" : "상품 정보 수정";
             goodsPreviewImg.src = item.img || "";
             editGoodsImg.value = item.img || "";
             editGoodsName.value = item.name || "";
@@ -1169,24 +1191,55 @@
             goodsPreviewImg.src = e.target.value.trim();
         });
 
-        async function saveGoodsData() {
-            if (!state.currentUser || !state.activeEditingGoods) return;
-
-            const updatedItem = {
-                id: state.activeEditingGoods.id,
-                name: editGoodsName.value.trim() || state.activeEditingGoods.name,
-                desc: editGoodsDesc.value.trim() || state.activeEditingGoods.desc,
-                img: editGoodsImg.value.trim() || state.activeEditingGoods.img,
-                isSpecial: !!state.activeEditingGoods.isSpecial
-            };
-
+        async function persistGoods(item, deleting = false) {
+            if (!state.currentUser || state.goodsBusy) return;
+            state.goodsBusy = true;
+            btnSaveGoods.disabled = btnDeleteGoods.disabled = true;
             try {
-                await setDoc(doc(db, "hotclips_goods", String(updatedItem.id)), updatedItem);
+                const batch = writeBatch(db);
+                if (!state.goodsInitialized) {
+                    state.goods.forEach(g => batch.set(doc(db, "hotclips_goods", String(g.id)), g));
+                }
+                // Keep an initialization marker so deleting the last product stays empty.
+                batch.set(doc(db, "hotclips_goods", "_catalog"), { initialized: true });
+                const ref = doc(db, "hotclips_goods", String(item.id));
+                if (deleting) batch.delete(ref);
+                else batch.set(ref, item);
+                await batch.commit();
                 closeGoodsEditModal();
             } catch (err) {
-                console.error("굿즈 정보 저장 실패:", err);
-                alert("굿즈 저장 중 오류가 발생했습니다: " + err.message);
+                console.error("상품 저장 실패:", err);
+                alert("상품 변경 중 오류가 발생했습니다: " + err.message);
+            } finally {
+                state.goodsBusy = false;
+                btnSaveGoods.disabled = btnDeleteGoods.disabled = false;
             }
+        }
+
+        async function saveGoodsData() {
+            if (!state.currentUser || !state.activeEditingGoods || state.goodsBusy) return;
+            const name = editGoodsName.value.trim();
+            if (!name) {
+                alert("상품 이름을 입력해주세요.");
+                editGoodsName.focus();
+                return;
+            }
+            const original = state.activeEditingGoods;
+            await persistGoods({
+                id: original.id ?? doc(collection(db, "hotclips_goods")).id,
+                name,
+                desc: editGoodsDesc.value.trim(),
+                img: editGoodsImg.value.trim(),
+                isSpecial: !!original.isSpecial,
+                order: original.order ?? (original.id == null ? Date.now() : Number(original.id) || 0)
+            });
+        }
+
+        async function deleteGoodsData() {
+            if (!state.currentUser || !state.activeEditingGoods || state.goodsBusy) return;
+            const item = state.activeEditingGoods;
+            if (item.id == null || !confirm('“' + item.name + '” 상품을 삭제하시겠습니까?')) return;
+            await persistGoods(item, true);
         }
 
         function renderBoards() {
@@ -1539,6 +1592,7 @@
                 }
 
                 state.currentUser = isAdmin ? user : null;
+                if (!isAdmin) closeGoodsEditModal();
                 authBtn.textContent = isAdmin ? "로그아웃" : "관리자 로그인";
                 authBtn.classList.toggle('logged-in', isAdmin);
                 adminControlsBar.classList.toggle('active', isAdmin);
@@ -1547,15 +1601,15 @@
             });
 
             onSnapshot(collection(db, "hotclips_goods"), snapshot => {
+                state.goodsInitialized = !snapshot.empty;
                 if (snapshot.empty) {
                     state.goods = defaultGoodsList;
-                    if (state.currentUser) {
-                        defaultGoodsList.forEach(g => setDoc(doc(db, "hotclips_goods", String(g.id)), g));
-                    }
                 } else {
                     const loadedGoods = [];
-                    snapshot.forEach(docSnap => loadedGoods.push(docSnap.data()));
-                    loadedGoods.sort((a, b) => a.id - b.id);
+                    snapshot.forEach(docSnap => {
+                        if (docSnap.id !== "_catalog") loadedGoods.push({ ...docSnap.data(), id: docSnap.id });
+                    });
+                    loadedGoods.sort((a, b) => (a.order ?? (Number(a.id) || 0)) - (b.order ?? (Number(b.id) || 0)));
                     state.goods = loadedGoods;
                 }
                 renderGoods();
@@ -1593,6 +1647,8 @@
             btnSaveStamp.addEventListener('click', saveStampData);
             btnResetStamp.addEventListener('click', resetStampData);
             btnSaveGoods.addEventListener('click', saveGoodsData);
+            btnAddGoods.addEventListener('click', () => openGoodsEditModal());
+            btnDeleteGoods.addEventListener('click', deleteGoodsData);
 
             nicknameSearch.addEventListener('input', (e) => {
                 state.searchQuery = e.target.value.trim().toLowerCase();
