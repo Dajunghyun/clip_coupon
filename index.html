@@ -69,16 +69,6 @@
             text-align: center;
         }
 
-        /* [상단 배너 이미지] */
-        .profile-img {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0 auto 20px;
-            border-radius: 16px;
-            border: 4px solid #ff758f;
-        }
-
         h1 {
             font-size: 28px;
             margin-bottom: 8px;
@@ -118,6 +108,16 @@
             padding: 4px 10px;
             border-radius: 20px;
         }
+
+        .coupon-how-list {
+            margin: 0;
+            padding-left: 20px;
+            color: #4b5563;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .coupon-how-list li + li { margin-top: 12px; }
+        .coupon-how-detail { display: block; }
 
         .goods-description {
             font-size: 14px;
@@ -188,23 +188,6 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-        }
-
-        .goods-badge-no {
-            align-self: flex-start;
-            font-size: 11px;
-            font-weight: bold;
-            color: #c9184a;
-            background-color: #ffe5ec;
-            padding: 2px 8px;
-            border-radius: 12px;
-            margin-bottom: 6px;
-        }
-
-        .goods-badge-no.special {
-            color: #6f4518;
-            background-color: #ede0d4;
-            border: 1px solid #b08968;
         }
 
         .goods-name {
@@ -824,22 +807,36 @@
 
     <!-- 1. 상단 배너 메인 보드 -->
     <div class="container">
-        <img src="my-image.png" alt="프로필 사진" class="profile-img">
         <h1>다정현 쿠폰북</h1>
         <p style="margin: 0; color: #666; font-size: 15px;">다정현 방송에 참여하고 선물을 받아가세요 !</p>
     </div>
 
-    <!-- 2. 핫클립 굿즈 안내 박스 -->
+    <section class="goods-card" aria-labelledby="coupon-how-title">
+        <div class="goods-header">
+            <h2 class="goods-title" id="coupon-how-title">✨쿠폰 얻는 방법</h2>
+        </div>
+        <ul class="coupon-how-list">
+            <li>니케 협작 기사님으로 참여하기
+                <span class="coupon-how-detail">(1시간당 쿠폰 1개가 적립됩니다)</span>
+            </li>
+            <li>본인이 딴 클립이 다정현 유튜브에 업로드 되었을 때
+                <span class="coupon-how-detail">(숏폼 업로드 쿠폰1개, 롱폼 업로드 쿠폰 2개 적립)</span>
+            </li>
+        </ul>
+    </section>
+
+    <!-- 2. 쿠폰별 보상 안내 박스 -->
     <div class="goods-card" id="goodsCardContainer">
         <div class="goods-header">
-            <h2 class="goods-title">🎁 쿠폰북</h2>
+            <h2 class="goods-title">🎁 쿠폰별 보상 안내</h2>
             <button class="btn-add-board goods-admin-add" id="btnAddGoods" type="button">+ 상품 추가</button>
         </div>
 
         <div class="goods-description">
-            쿠폰에 <b>도장 3개마다</b> 찍혀 있는 분에 한하여 지급하는 전용 굿즈입니다.<br>
-            굿즈 배송은 제작 후 팬심을 통해 보내는 과정이 있어 <b>일정 시간이 소요</b>됩니다.<br>
-            자세한 내용은 공지사항을 참고해주세요.
+            기프티콘 외의 굿즈들은 제작 및 배송에 시간이 소요되기에, <b>최소 3주이상 소요</b>됩니다.<br>
+            쿠폰북 굿즈는 한정판이며, 쿠폰북 운영 종료 후 별도 판매 여부 및 일정은 미정입니다.<br>
+            본 쿠폰북 서비스는 1주일의 사전공지 후 종료될 수 있습니다.<br>
+            이 외 자세한 내용 및 굿즈 신청 방법 등은 카페 공지사항을 참고해 주세요!
         </div>
 
         <div class="goods-grid" id="goods-grid-container"></div>
@@ -1141,18 +1138,15 @@
                 empty.textContent = "등록된 상품이 없습니다.";
                 container.appendChild(empty);
             }
-            state.goods.forEach((item, index) => {
+            state.goods.forEach(item => {
                 const itemDiv = document.createElement("div");
                 itemDiv.className = "goods-item";
 
-                const badgeClass = item.isSpecial ? "goods-badge-no special" : "goods-badge-no";
-                const badgeText = item.isSpecial ? `No.${index + 1} ◆ 도장 9개` : `No.${index + 1}`;
 
                 itemDiv.innerHTML = `
                     <div class="goods-img-wrapper">
                         <img src="${escapeGoodsText(item.img)}" alt="${escapeGoodsText(item.name)}" class="goods-img">
                     </div>
-                    <span class="${badgeClass}">${badgeText}</span>
                     <h3 class="goods-name">${escapeGoodsText(item.name)}</h3>
                     <p class="goods-info">${escapeGoodsText(item.desc)}</p>
                 `;
