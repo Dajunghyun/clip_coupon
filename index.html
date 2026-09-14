@@ -920,6 +920,13 @@
                     <input type="text" class="modal-input" id="editStampUrl" placeholder="https://chzzk.naver.com/clips/...">
                 </div>
                 
+                <div class="modal-form-group">
+                    <label for="editStampUsed">도장 사용 여부</label>
+                    <select class="modal-input" id="editStampUsed">
+                        <option value="unused">미사용</option>
+                        <option value="used">사용완료</option>
+                    </select>
+                </div>
                 <div class="modal-btn-row">
                     <button class="modal-btn-save" id="btnSaveStamp">도장 저장</button>
                     <button class="modal-btn-reset" id="btnResetStamp">초기화</button>
@@ -1066,6 +1073,7 @@
         const editStampDate = document.getElementById('editStampDate');
         const editStampText = document.getElementById('editStampText');
         const editStampUrl = document.getElementById('editStampUrl');
+        const editStampUsed = document.getElementById('editStampUsed');
         const btnSaveStamp = document.getElementById('btnSaveStamp');
         const btnResetStamp = document.getElementById('btnResetStamp');
 
@@ -1356,7 +1364,7 @@
                     btn.className = `stamp-btn${s % 3 === 0 ? ' special' : ''}${isCompleted ? ' active' : ''}`;
                     
                     if (isCompleted) {
-                        btn.innerHTML = `<img src="Jerry.png" alt="도장" class="stamp-icon"><span class="stamp-number">${s}</span>`;
+                        btn.innerHTML = `<img src="${state.stamps[stampKey]?.used === true ? 'stamp2.png' : 'stamp1.png'}" alt="${state.stamps[stampKey]?.used === true ? '사용완료 도장' : '미사용 도장'}" class="stamp-icon"><span class="stamp-number">${s}</span>`;
                     } else {
                         btn.innerHTML = `<span class="stamp-number">${s}</span>`;
                     }
@@ -1413,6 +1421,7 @@
                 editStampDate.value = data.date || "";
                 editStampText.value = data.text || "";
                 editStampUrl.value = data.url || "";
+                editStampUsed.value = data.used === true ? "used" : "unused";
             } else {
                 modalViewMode.style.display = 'flex';
                 modalEditMode.style.display = 'none';
@@ -1460,7 +1469,7 @@
                 }
             }
 
-            const newStampData = { date, text, url };
+            const newStampData = { date, text, url, used: editStampUsed.value === "used" };
 
             try {
                 await setDoc(doc(db, "hotclips_stamps", key), newStampData);
