@@ -828,7 +828,7 @@
         </div>
         <ul class="coupon-how-list">
             <li><span class="coupon-how-marker">· </span><span class="coupon-how-content"><b>니케 협작 기사님으로 참여</b>하기<span class="coupon-how-detail">(1시간당 쿠폰 1개가 적립됩니다)</span></span></li>
-            <li><span class="coupon-how-marker">· </span><span class="coupon-how-content">본인이 딴 클립이 <b>다정현 유튜브에 업로드</b> 되었을 때<span class="coupon-how-detail">(숏폼 업로드 쿠폰1개, 롱폼 업로드 쿠폰 2개 적립)</span></span></li>
+            <li><span class="coupon-how-marker">· </span><span class="coupon-how-content">본인이 딴 <b>클립이 다정현 유튜브에 업로드</b> 되었을 때<span class="coupon-how-detail">(숏폼 업로드 쿠폰1개, 롱폼 업로드 쿠폰 2개 적립)</span></span></li>
         </ul>
     </section>
 
@@ -1022,17 +1022,6 @@
 
         const STAMPS_PER_BOARD = 30;
 
-        const defaultGoodsList = [
-            { id: 1, name: "다정현 손편지", desc: "a", img: "gift1.png", isSpecial: false },
-            { id: 2, name: "다정현 맥세이프 그립톡", desc: "b", img: "gift2.png", isSpecial: false },
-            { id: 3, name: "다정현 키링", desc: "c", img: "gift3.png", isSpecial: false },
-            { id: 4, name: "다정현 아크릴 스탠드", desc: "d", img: "gift4.png", isSpecial: false },
-            { id: 5, name: "다정현 캔뱃지", desc: "e", img: "gift5.png", isSpecial: false },
-            { id: 6, name: "다정현 머그컵", desc: "f", img: "gift6.png", isSpecial: false },
-            { id: 7, name: "다정현 향수", desc: "g", img: "gift7.png", isSpecial: false },
-            { id: 8, name: "다정현 장패드", desc: "h", img: "gift8.png", isSpecial: true }
-        ];
-
         const defaultBoards = {
             1: { name: "다정현", count: 0 },
             2: { name: "조선우", count: 0 },
@@ -1041,7 +1030,9 @@
 
         const state = {
             currentUser: null,
-            goods: defaultGoodsList,
+            goods: [],
+            goodsLoaded: false,
+            goodsLoadError: false,
             goodsInitialized: false,
             goodsBusy: false,
             boards: {},
@@ -1141,6 +1132,17 @@
             const container = document.getElementById("goods-grid-container");
             container.innerHTML = "";
             goodsCardContainer.classList.toggle('is-admin', !!state.currentUser);
+            btnAddGoods.disabled = !state.goodsLoaded || state.goodsLoadError || state.goodsBusy;
+            if (!state.goodsLoaded || state.goodsLoadError) {
+                const message = document.createElement("p");
+                message.style.gridColumn = "1 / -1";
+                message.setAttribute("role", "status");
+                message.textContent = state.goodsLoadError
+                    ? "상품을 불러오지 못했습니다. 잠시 후 새로고침해주세요."
+                    : "상품을 불러오는 중입니다…";
+                container.appendChild(message);
+                return;
+            }
 
             if (!state.goods.length) {
                 const empty = document.createElement("p");
@@ -1187,7 +1189,7 @@
         }
 
         async function moveGoods(id, direction) {
-            if (!state.currentUser || state.goodsBusy || ![-1, 1].includes(direction)) return;
+            if (!state.currentUser || !state.goodsLoaded || state.goodsLoadError || state.goodsBusy || ![-1, 1].includes(direction)) return;
             const index = state.goods.findIndex(item => String(item.id) === String(id));
             const target = index + direction;
             if (index < 0 || target < 0 || target >= state.goods.length) return;
@@ -1220,7 +1222,7 @@
         }
 
         function openGoodsEditModal(item = {}) {
-            if (!state.currentUser || state.goodsBusy) return;
+            if (!state.currentUser || !state.goodsLoaded || state.goodsLoadError || state.goodsBusy) return;
             btnDeleteGoods.style.display = item.id == null ? "none" : "block";
             state.activeEditingGoods = item;
             goodsModalTitle.textContent = item.id == null ? "상품 추가" : "상품 정보 수정";
@@ -1242,7 +1244,7 @@
         });
 
         async function persistGoods(item, deleting = false) {
-            if (!state.currentUser || state.goodsBusy) return;
+            if (!state.currentUser || !state.goodsLoaded || state.goodsLoadError || state.goodsBusy) return;
             state.goodsBusy = true;
             btnSaveGoods.disabled = btnDeleteGoods.disabled = true;
             try {
@@ -1652,16 +1654,19 @@
 
             onSnapshot(collection(db, "hotclips_goods"), snapshot => {
                 state.goodsInitialized = !snapshot.empty;
-                if (snapshot.empty) {
-                    state.goods = defaultGoodsList;
-                } else {
-                    const loadedGoods = [];
-                    snapshot.forEach(docSnap => {
-                        if (docSnap.id !== "_catalog") loadedGoods.push({ ...docSnap.data(), id: docSnap.id });
-                    });
-                    loadedGoods.sort((a, b) => (a.order ?? (Number(a.id) || 0)) - (b.order ?? (Number(b.id) || 0)));
-                    state.goods = loadedGoods;
-                }
+                const loadedGoods = [];
+                snapshot.forEach(docSnap => {
+                    if (docSnap.id !== "_catalog") loadedGoods.push({ ...docSnap.data(), id: docSnap.id });
+                });
+                loadedGoods.sort((a, b) => (a.order ?? (Number(a.id) || 0)) - (b.order ?? (Number(b.id) || 0)));
+                state.goods = loadedGoods;
+                state.goodsLoaded = true;
+                state.goodsLoadError = false;
+                renderGoods();
+            }, error => {
+                console.error("상품 불러오기 실패:", error);
+                state.goods = [];
+                state.goodsLoadError = true;
                 renderGoods();
             });
 
