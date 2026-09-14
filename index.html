@@ -463,16 +463,6 @@
             border-color: #ffccd5;
         }
 
-        .stamp-btn.special {
-            background-color: #faf7f5;
-            border: 1.5px solid #ede0d4;
-        }
-
-        .stamp-btn.special:hover {
-            border-color: #d6c1af;
-            box-shadow: 0 4px 8px rgba(111, 69, 24, 0.1);
-        }
-
         .stamp-icon {
             width: 70%;
             height: 70%;
@@ -485,11 +475,6 @@
             border: 2px solid #ff8fa3;
         }
 
-        .stamp-btn.active.special {
-            background-color: #ede0d4;
-            border: 2px solid #b08968;
-        }
-
         .stamp-number {
             position: absolute;
             bottom: 3px;
@@ -499,16 +484,8 @@
             font-weight: 600;
         }
 
-        .stamp-btn.special .stamp-number {
-            color: #bfaea2;
-        }
-
         .stamp-btn.active .stamp-number {
             color: #c9184a;
-        }
-
-        .stamp-btn.active.special .stamp-number {
-            color: #6f4518;
         }
 
         /* =======================================
@@ -1361,7 +1338,7 @@
                     const stampKey = `${item.id}-${s}`;
                     const isCompleted = isStampComplete(state.stamps[stampKey]);
 
-                    btn.className = `stamp-btn${s % 3 === 0 ? ' special' : ''}${isCompleted ? ' active' : ''}`;
+                    btn.className = `stamp-btn${isCompleted ? ' active' : ''}`;
                     
                     if (isCompleted) {
                         btn.innerHTML = `<img src="${state.stamps[stampKey]?.used === true ? 'stamp2.png' : 'stamp1.png'}" alt="${state.stamps[stampKey]?.used === true ? '사용완료 도장' : '미사용 도장'}" class="stamp-icon"><span class="stamp-number">${s}</span>`;
@@ -1410,9 +1387,9 @@
             modalTitle.textContent = `${stampIndex}번 도장`;
 
             if (isCompleted) {
-                modalDot.style.backgroundColor = (stampIndex % 3 === 0) ? "#b08968" : "#ff758f";
+                modalDot.style.backgroundColor = "#ff758f";
             } else {
-                modalDot.style.backgroundColor = (stampIndex % 3 === 0) ? "#ede0d4" : "#ffe3ea";
+                modalDot.style.backgroundColor = "#ffe3ea";
             }
 
             if (state.currentUser) {
